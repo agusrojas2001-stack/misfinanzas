@@ -44,6 +44,17 @@ function formatARS(n) {
   }).format(n)
 }
 
+function formatCompact(n) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1,
+  }).format(n)
+}
+
+function balanceFontClass(n) {
+  const len = formatARS(n).length
+  return len > 10 ? 'text-2xl' : len > 8 ? 'text-3xl' : 'text-4xl'
+}
+
 function mesLabel(mes) {
   const [anio, m] = mes.split('-')
   const nombre = new Date(Number(anio), Number(m) - 1, 1)
@@ -70,12 +81,12 @@ function mesActual() {
 
 function SaldoCard({ label, monto, cantidad, color, emoji }) {
   return (
-    <div className="card flex-1 min-w-0">
+    <div className="card flex-1 min-w-0 overflow-hidden">
       <div className="flex items-center gap-1.5 mb-2">
         <span className="text-base">{emoji}</span>
-        <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">{label}</span>
+        <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide truncate">{label}</span>
       </div>
-      <p className={`text-base font-bold ${color} leading-tight`}>{formatARS(monto)}</p>
+      <p className={`text-sm font-bold ${color} leading-tight truncate`}>{formatCompact(monto)}</p>
       <p className="text-xs text-zinc-600 mt-1">{cantidad} mov.</p>
     </div>
   )
@@ -211,7 +222,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="card bg-gradient-to-br from-violet-900/40 to-zinc-900 border-violet-800/30">
               <p className="text-zinc-400 text-sm mb-1">Balance del mes</p>
-              <p className={`text-4xl font-extrabold tracking-tight ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <p className={`${balanceFontClass(balance)} font-extrabold tracking-tight ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {formatARS(balance)}
               </p>
               {totalIngresos > 0 && (
@@ -278,9 +289,9 @@ export default function DashboardPage() {
                 <h2 className="text-sm font-semibold text-zinc-300">Top gastos del mes</h2>
                 {topGastos.map((g, i) => (
                   <div key={i} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-300">{g.emoji} {g.nombre}</span>
-                      <span className="font-semibold text-rose-400">{formatARS(g.total)}</span>
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="text-zinc-300 min-w-0 truncate">{g.emoji} {g.nombre}</span>
+                      <span className="font-semibold text-rose-400 flex-shrink-0">{formatCompact(g.total)}</span>
                     </div>
                     <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-700"
@@ -324,7 +335,7 @@ export default function DashboardPage() {
                         : m.tipo === 'ahorro' ? 'text-violet-400'
                         : 'text-rose-400'
                       }`}>
-                        {m.tipo === 'ingreso' ? '+' : '-'}{formatARS(m.monto)}
+                        {m.tipo === 'ingreso' ? '+' : '-'}{formatCompact(m.monto)}
                       </span>
                       <button
                         onClick={() => eliminar(m.id)}

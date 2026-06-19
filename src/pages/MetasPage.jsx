@@ -8,6 +8,12 @@ function formatARS(n) {
   }).format(n)
 }
 
+function formatCompact(n) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1,
+  }).format(n)
+}
+
 function mesesHasta(fechaStr) {
   const hoy = new Date()
   const objetivo = new Date(fechaStr + 'T00:00:00')
@@ -142,9 +148,9 @@ export default function MetasPage() {
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-zinc-500">
-                    <span>{formatARS(montoActual)} ahorrado</span>
-                    <span>{lograda ? '¡Meta lograda! 🎉' : `Falta ${formatARS(falta)}`}</span>
+                  <div className="flex justify-between text-xs text-zinc-500 gap-2">
+                    <span className="min-w-0 truncate">{formatCompact(montoActual)} ahorrado</span>
+                    <span className="flex-shrink-0">{lograda ? '¡Meta lograda! 🎉' : `Falta ${formatCompact(falta)}`}</span>
                   </div>
                 </div>
 
@@ -152,7 +158,7 @@ export default function MetasPage() {
                 {!lograda && porMes !== null && (
                   <div className="bg-zinc-800/50 rounded-xl px-3 py-2 flex items-center justify-between">
                     <span className="text-xs text-zinc-500">Para llegar a tiempo, ahorrá</span>
-                    <span className="text-sm font-bold text-violet-400">{formatARS(porMes)}/mes</span>
+                    <span className="text-sm font-bold text-violet-400 flex-shrink-0">{formatCompact(porMes)}/mes</span>
                   </div>
                 )}
 

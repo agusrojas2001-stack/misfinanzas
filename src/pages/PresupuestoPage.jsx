@@ -19,6 +19,17 @@ function formatARS(n) {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(n)
 }
 
+function formatCompact(n) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1,
+  }).format(n)
+}
+
+function balanceFontClass(n) {
+  const len = formatARS(n).length
+  return len > 10 ? 'text-2xl' : len > 8 ? 'text-3xl' : 'text-4xl'
+}
+
 function BarraProgreso({ gastado, maximo }) {
   const pct = maximo > 0 ? Math.min((gastado / maximo) * 100, 100) : 0
   const excedido = gastado > maximo
@@ -138,7 +149,7 @@ export default function PresupuestoPage() {
                 return (
                   <>
                     <p className="text-xs text-zinc-500 mb-0.5">{excedido ? 'Excediste el presupuesto en' : 'Disponible'}</p>
-                    <p className={`text-4xl font-extrabold tracking-tight ${color}`}>
+                    <p className={`${balanceFontClass(Math.abs(restante))} font-extrabold tracking-tight ${color}`}>
                       {formatARS(Math.abs(restante))}
                     </p>
                   </>
@@ -147,9 +158,9 @@ export default function PresupuestoPage() {
             </div>
 
             {/* Gastado y máximo — secundario */}
-            <div className="flex justify-between text-sm text-zinc-500 mb-1">
-              <span>{formatARS(totalGastadoMes)} <span className="text-zinc-600">gastados</span></span>
-              <span className="text-zinc-600">de {formatARS(presupGeneral.monto_max)}</span>
+            <div className="flex justify-between text-sm text-zinc-500 mb-1 gap-2">
+              <span className="min-w-0 truncate">{formatCompact(totalGastadoMes)} <span className="text-zinc-600">gastados</span></span>
+              <span className="text-zinc-600 flex-shrink-0">de {formatCompact(presupGeneral.monto_max)}</span>
             </div>
             <BarraProgreso gastado={totalGastadoMes} maximo={presupGeneral.monto_max} />
           </>
@@ -205,17 +216,17 @@ export default function PresupuestoPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between text-sm mt-1">
-                  <span className={excedido ? 'text-rose-400 font-semibold' : 'text-zinc-300'}>
-                    {formatARS(gastado)} gastados
+                <div className="flex justify-between text-sm mt-1 gap-2">
+                  <span className={`min-w-0 truncate ${excedido ? 'text-rose-400 font-semibold' : 'text-zinc-300'}`}>
+                    {formatCompact(gastado)} gastados
                   </span>
-                  <span className="text-zinc-500">máx. {formatARS(p.monto_max)}</span>
+                  <span className="text-zinc-500 flex-shrink-0">máx. {formatCompact(p.monto_max)}</span>
                 </div>
 
                 <BarraProgreso gastado={gastado} maximo={p.monto_max} />
 
                 {!excedido && (
-                  <p className="text-xs text-zinc-600 mt-1">{formatARS(restante)} disponibles</p>
+                  <p className="text-xs text-zinc-600 mt-1">{formatCompact(restante)} disponibles</p>
                 )}
               </div>
             )
