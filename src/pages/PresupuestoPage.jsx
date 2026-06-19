@@ -40,11 +40,12 @@ export default function PresupuestoPage() {
   const { movimientos } = useMovimientos(mes)
   const { categorias } = useCategorias()
 
-  const [modal, setModal] = useState(null) // null | 'categoria' | 'general'
-  const [catId, setCatId]   = useState('')
-  const [monto, setMonto]   = useState('')
-  const [guardando, setGuardando] = useState(false)
-  const [error, setError]   = useState('')
+  const [modal, setModal]           = useState(null) // null | 'categoria' | 'general'
+  const [editandoPresup, setEditandoPresup] = useState(null)
+  const [catId, setCatId]           = useState('')
+  const [monto, setMonto]           = useState('')
+  const [guardando, setGuardando]   = useState(false)
+  const [error, setError]           = useState('')
 
   // Presupuesto general (categoria_id === null)
   const presupGeneral = presupuestos.find(p => p.categoria_id === null)
@@ -66,7 +67,7 @@ export default function PresupuestoPage() {
     const { error: err } = await guardar({ categoria_id: catId, monto_max: Number(monto) })
     setGuardando(false)
     if (err) { setError(err); return }
-    setModal(null); setCatId(''); setMonto('')
+    setModal(null); setCatId(''); setMonto(''); setEditandoPresup(null)
   }
 
   async function handleGuardarGeneral() {
@@ -82,6 +83,14 @@ export default function PresupuestoPage() {
     setMonto(presupGeneral ? String(presupGeneral.monto_max) : '')
     setError('')
     setModal('general')
+  }
+
+  function abrirEditarCategoria(p) {
+    setEditandoPresup(p)
+    setCatId(p.categoria_id)
+    setMonto(String(p.monto_max))
+    setError('')
+    setModal('categoria')
   }
 
   return (
@@ -173,12 +182,19 @@ export default function PresupuestoPage() {
                     <span className="text-xl">{p.categorias?.emoji ?? '📦'}</span>
                     <span className="font-semibold text-zinc-200">{p.categorias?.nombre}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       excedido ? 'bg-rose-500/20 text-rose-400' : 'bg-zinc-800 text-zinc-500'
                     }`}>
                       {excedido ? '⚠️ Excedido' : `${pct}%`}
                     </span>
+                    <button
+                      onClick={() => abrirEditarCategoria(p)}
+                      className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-violet-500/20 flex items-center justify-center
+                                 text-zinc-500 hover:text-violet-400 text-xs transition-all"
+                    >
+                      ✏️
+                    </button>
                     <button
                       onClick={() => eliminar(p.id)}
                       className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-rose-500/20 flex items-center justify-center
@@ -237,14 +253,14 @@ export default function PresupuestoPage() {
         </Modal>
       )}
 
-      {/* Modal: presupuesto por categoría */}
+      {/* Modal: presupuesto por categoría (nueva o editar) */}
       {modal === 'categoria' && (
         <Modal
-          titulo="Presupuesto por categoría"
-          onClose={() => setModal(null)}
+          titulo={editandoPresup ? 'Editar presupuesto' : 'Presupuesto por categoría'}
+          onClose={() => { setModal(null); setEditandoPresup(null) }}
           actions={
             <div className="flex gap-3">
-              <button type="button" onClick={() => setModal(null)} className="btn-secondary">Cancelar</button>
+              <button type="button" onClick={() => { setModal(null); setEditandoPresup(null) }} className="btn-secondary">Cancelar</button>
               <button onClick={handleGuardarCategoria} disabled={!catId || !monto || guardando} className="btn-primary">
                 {guardando ? 'Guardando...' : 'Guardar'}
               </button>
@@ -255,7 +271,12 @@ export default function PresupuestoPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Categoría</label>
-              {catsDisponibles.length === 0 ? (
+              {editandoPresup ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm">
+                  <span>{editandoPresup.categorias?.emoji}</span>
+                  <span className="font-medium">{editandoPresup.categorias?.nombre}</span>
+                </div>
+              ) : catsDisponibles.length === 0 ? (
                 <p className="text-zinc-500 text-sm py-2">Ya tenés presupuesto en todas tus categorías de gasto.</p>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
@@ -274,7 +295,7 @@ export default function PresupuestoPage() {
               <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Monto máximo (ARS)</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
-                <input type="text" inputMode="numeric" placeholder="0"
+                <input type="text" inputMode="numeric" placeholder="0" autoFocus
                   value={monto ? new Intl.NumberFormat('es-AR').format(Number(monto)) : ''}
                   onChange={e => setMonto(e.target.value.replace(/\D/g, ''))}
                   className="input-dark pl-8"

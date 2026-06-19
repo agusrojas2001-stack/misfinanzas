@@ -7,6 +7,8 @@ import ChatbotPage from './pages/ChatbotPage'
 import MetasPage from './pages/MetasPage'
 import PresupuestoPage from './pages/PresupuestoPage'
 import CategoriasPage from './pages/CategoriasPage'
+import MovimientosPage from './pages/MovimientosPage'
+import AnalisisPage from './pages/AnalisisPage'
 import LoginPage from './pages/LoginPage'
 
 function LoadingScreen() {
@@ -59,6 +61,8 @@ function AppRoutes() {
         <Route path="metas" element={<MetasPage />} />
         <Route path="presupuesto" element={<PresupuestoPage />} />
         <Route path="categorias" element={<CategoriasPage />} />
+        <Route path="movimientos" element={<MovimientosPage />} />
+        <Route path="analisis" element={<AnalisisPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -9,7 +9,8 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
       {/* Barra superior con hamburguesa */}
-      <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-sm border-b border-zinc-900 flex items-center justify-between px-6 h-11 max-w-4xl mx-auto w-full">
+      <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-sm border-b border-zinc-900 safe-top w-full">
+      <div className="flex items-center justify-between px-6 h-11 max-w-4xl mx-auto">
         <span className="text-sm font-bold text-violet-400">MisFinanzas 💸</span>
         <button
           onClick={() => setDrawerOpen(true)}
@@ -18,6 +19,7 @@ export default function Layout() {
         >
           ☰
         </button>
+      </div>
       </header>
 
       <main className="flex-1 overflow-y-auto pb-24">

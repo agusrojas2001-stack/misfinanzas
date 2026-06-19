@@ -20,33 +20,48 @@ function fechaLabel(fechaStr) {
 }
 
 export default function MetasPage() {
-  const { metas, loading, crear, archivar, eliminar } = useMetas()
-  const [modal, setModal] = useState(false)
-  const [guardando, setGuardando] = useState(false)
-  const [error, setError] = useState('')
+  const { metas, loading, crear, actualizar, archivar, eliminar } = useMetas()
+  const [modal, setModal]           = useState(null) // null | 'nueva' | 'editar'
+  const [editandoMeta, setEditando] = useState(null)
+  const [guardando, setGuardando]   = useState(false)
+  const [error, setError]           = useState('')
 
-  const [nombre, setNombre]         = useState('')
-  const [emoji, setEmoji]           = useState('🎯')
-  const [montoObj, setMontoObj]     = useState('')
-  const [fechaObj, setFechaObj]     = useState('')
+  const [nombre, setNombre]     = useState('')
+  const [emoji, setEmoji]       = useState('🎯')
+  const [montoObj, setMontoObj] = useState('')
+  const [fechaObj, setFechaObj] = useState('')
 
-  function abrirModal() {
+  function abrirNueva() {
     setNombre(''); setEmoji('🎯'); setMontoObj(''); setFechaObj(''); setError('')
-    setModal(true)
+    setEditando(null)
+    setModal('nueva')
   }
 
-  async function handleCrear() {
+  function abrirEditar(meta) {
+    setNombre(meta.nombre)
+    setEmoji(meta.emoji)
+    setMontoObj(String(meta.monto_objetivo))
+    setFechaObj(meta.fecha_objetivo ?? '')
+    setError('')
+    setEditando(meta)
+    setModal('editar')
+  }
+
+  async function handleGuardar() {
     if (!nombre.trim() || !montoObj) return
     setGuardando(true); setError('')
-    const { error: err } = await crear({
+    const datos = {
       nombre: nombre.trim(),
       emoji,
       monto_objetivo: Number(montoObj),
       fecha_objetivo: fechaObj || null,
-    })
+    }
+    const { error: err } = modal === 'editar'
+      ? await actualizar(editandoMeta.id, datos)
+      : await crear(datos)
     setGuardando(false)
     if (err) { setError(err); return }
-    setModal(false)
+    setModal(null)
   }
 
   return (
@@ -57,7 +72,7 @@ export default function MetasPage() {
           <h1 className="text-xl font-bold text-zinc-100">Metas 🎯</h1>
           <p className="text-xs text-zinc-500 mt-0.5">Tus objetivos de ahorro</p>
         </div>
-        <button onClick={abrirModal}
+        <button onClick={abrirNueva}
           className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold
                      rounded-xl px-4 py-2 transition-all active:scale-95">
           + Nueva
@@ -71,7 +86,7 @@ export default function MetasPage() {
           <p className="text-4xl mb-3">🎯</p>
           <p className="text-zinc-300 font-semibold">Sin metas todavía</p>
           <p className="text-zinc-500 text-sm mt-1">Creá tu primera meta de ahorro</p>
-          <button onClick={abrirModal}
+          <button onClick={abrirNueva}
             className="mt-4 text-violet-400 hover:text-violet-300 text-sm font-medium">
             + Crear meta
           </button>
@@ -102,9 +117,14 @@ export default function MetasPage() {
                     <span className={`text-base font-bold ${lograda ? 'text-emerald-400' : 'text-violet-400'}`}>
                       {pct}%
                     </span>
+                    <button onClick={() => abrirEditar(meta)}
+                      className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-violet-500/20 flex items-center justify-center
+                                 text-zinc-600 hover:text-violet-400 text-xs transition-all ml-1">
+                      ✏️
+                    </button>
                     <button onClick={() => eliminar(meta.id)}
                       className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-rose-500/20 flex items-center justify-center
-                                 text-zinc-600 hover:text-rose-400 text-xs transition-all ml-1">
+                                 text-zinc-600 hover:text-rose-400 text-xs transition-all">
                       ✕
                     </button>
                   </div>
@@ -142,7 +162,6 @@ export default function MetasPage() {
                   </div>
                 )}
 
-                {/* Archivar */}
                 <button onClick={() => archivar(meta.id)}
                   className="w-full text-xs text-zinc-600 hover:text-zinc-400 transition-colors py-1">
                   Archivar meta
@@ -153,15 +172,17 @@ export default function MetasPage() {
         </div>
       )}
 
-      {/* Modal nueva meta */}
+      {/* Modal nueva / editar meta */}
       {modal && (
-        <Modal titulo="Nueva meta de ahorro" onClose={() => setModal(false)}
+        <Modal
+          titulo={modal === 'editar' ? 'Editar meta' : 'Nueva meta de ahorro'}
+          onClose={() => setModal(null)}
           actions={
             <div className="flex gap-3">
-              <button type="button" onClick={() => setModal(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={handleCrear} disabled={!nombre.trim() || !montoObj || guardando}
+              <button type="button" onClick={() => setModal(null)} className="btn-secondary">Cancelar</button>
+              <button onClick={handleGuardar} disabled={!nombre.trim() || !montoObj || guardando}
                 className="btn-primary">
-                {guardando ? 'Guardando...' : 'Crear meta'}
+                {guardando ? 'Guardando...' : modal === 'editar' ? 'Guardar cambios' : 'Crear meta'}
               </button>
             </div>
           }
@@ -192,7 +213,7 @@ export default function MetasPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Fecha objetivo</label>
+              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Fecha objetivo <span className="text-zinc-600 normal-case">(opcional)</span></label>
               <input type="date" value={fechaObj} onChange={e => setFechaObj(e.target.value)}
                 className="input-dark" />
             </div>

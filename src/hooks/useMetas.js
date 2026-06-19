@@ -33,10 +33,17 @@ export function useMetas() {
     await fetch()
   }
 
+  async function actualizar(id, { nombre, emoji, monto_objetivo, fecha_objetivo }) {
+    const { error } = await supabase.from('metas').update({ nombre, emoji, monto_objetivo, fecha_objetivo }).eq('id', id)
+    if (error) return { error: error.message }
+    await fetch()
+    return { error: null }
+  }
+
   async function eliminar(id) {
     await supabase.from('metas').delete().eq('id', id)
     await fetch()
   }
 
-  return { metas, loading, crear, archivar, eliminar, refetch: fetch }
+  return { metas, loading, crear, actualizar, archivar, eliminar, refetch: fetch }
 }

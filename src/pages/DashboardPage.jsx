@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useMovimientos } from '../hooks/useMovimientos'
+import { usePresupuesto } from '../hooks/usePresupuesto'
+import { useMetas } from '../hooks/useMetas'
 import { supabase } from '../lib/supabase'
+import { calcularInsights } from '../lib/insights'
+import InsightCard from '../components/Insights/InsightCard'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -100,9 +105,13 @@ function DolarBadge() {
 
 export default function DashboardPage() {
   const { perfil, user } = useAuth()
+  const navigate = useNavigate()
   const [mes, setMes] = useState(mesActual())
   const { movimientos, loading, eliminar } = useMovimientos(mes)
+  const { presupuestos } = usePresupuesto(mes)
+  const { metas } = useMetas()
   const [dataMeses, setDataMeses] = useState([])
+  const [insightsAbiertos, setInsightsAbiertos] = useState(false)
 
   useEffect(() => {
     async function fetchUltimosMeses() {
@@ -138,6 +147,11 @@ export default function DashboardPage() {
   const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + m.monto, 0)
   const balance       = totalIngresos - totalGastos - totalAhorro
   const pctAhorro     = totalIngresos > 0 ? Math.round((totalAhorro / totalIngresos) * 100) : 0
+
+  // Insights locales
+  const insights = loading ? [] : calcularInsights({
+    movimientos, mes, presupuestos, metas, dataMeses, totalIngresos, totalAhorro
+  })
 
   // Top 3 gastos por categoría
   const topGastos = Object.values(
@@ -215,6 +229,48 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Insights del mes */}
+          {insights.length > 0 && (() => {
+            const urgentes = insights.filter(i => i.tipo === 'alerta' || i.tipo === 'warning')
+            const resto    = insights.filter(i => i.tipo !== 'alerta' && i.tipo !== 'warning')
+            return (
+              <div className="space-y-2">
+                {/* Alertas urgentes — siempre visibles */}
+                {urgentes.map((ins, i) => (
+                  <div key={i} className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-xs leading-relaxed
+                    ${ins.tipo === 'alerta'
+                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-200'}`}>
+                    <span className="text-base flex-shrink-0">{ins.emoji}</span>
+                    <p>{ins.mensaje}</p>
+                  </div>
+                ))}
+
+                {/* Resto — colapsable */}
+                {resto.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setInsightsAbiertos(v => !v)}
+                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200 transition-colors py-1"
+                    >
+                      <span>💡</span>
+                      <span className="font-medium">Insights del mes</span>
+                      <span className="text-xs bg-zinc-800 text-zinc-500 rounded-full px-2 py-0.5">{resto.length}</span>
+                      <span className={`text-zinc-600 transition-transform duration-200 ${insightsAbiertos ? 'rotate-180' : ''}`}>▾</span>
+                    </button>
+                    {insightsAbiertos && (
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 mt-2" style={{ scrollbarWidth: 'none' }}>
+                        {resto.map((ins, i) => (
+                          <InsightCard key={i} insight={ins} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           {/* Top gastos + Movimientos — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topGastos.length > 0 && (
@@ -236,7 +292,13 @@ export default function DashboardPage() {
             )}
 
             <div className="card space-y-1">
-              <h2 className="text-sm font-semibold text-zinc-300 mb-2">Últimos movimientos</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-semibold text-zinc-300">Últimos movimientos</h2>
+                <button onClick={() => navigate('/movimientos')}
+                  className="text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors">
+                  Ver todos →
+                </button>
+              </div>
               {ultimos.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="text-2xl mb-2">📭</p>

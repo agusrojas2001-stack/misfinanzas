@@ -5,7 +5,7 @@ const tabs = [
   { to: '/presupuesto',  label: 'Presupuesto', emoji: '📊' },
   { to: '/registrar',    label: 'Registrar',   emoji: '➕', special: true },
   { to: '/chatbot',      label: 'Monedita',    emoji: '💬' },
-  { to: '/metas',        label: 'Metas',       emoji: '🎯' },
+  { to: '/analisis',     label: 'Análisis',    emoji: '📈' },
 ]
 
 export default function BottomNav() {

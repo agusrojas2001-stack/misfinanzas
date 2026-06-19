@@ -40,6 +40,13 @@ export default function MenuDrawer({ open, onClose }) {
         {/* Opciones */}
         <div className="flex-1 py-3">
           <button
+            onClick={() => ir('/movimientos')}
+            className="w-full flex items-center gap-3 px-5 py-3.5 text-zinc-300 hover:bg-zinc-800 transition-colors text-left"
+          >
+            <span className="text-xl">📋</span>
+            <span className="font-medium">Movimientos</span>
+          </button>
+          <button
             onClick={() => ir('/categorias')}
             className="w-full flex items-center gap-3 px-5 py-3.5 text-zinc-300 hover:bg-zinc-800 transition-colors text-left"
           >
