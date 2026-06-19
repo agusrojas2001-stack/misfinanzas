@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-sans;
+    overscroll-behavior: none;
+  }
+
+  /* Scrollbar oscuro */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-zinc-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-700 rounded-full;
+  }
+}
+
+@layer components {
+  /* Safe area para PWA en iPhone con notch */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Inputs dark */
+  .input-dark {
+    @apply bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-100
+           placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500
+           focus:border-transparent transition-all w-full;
+  }
+
+  /* Botón primario */
+  .btn-primary {
+    @apply bg-violet-600 hover:bg-violet-500 active:bg-violet-700
+           text-white font-semibold rounded-xl px-6 py-3
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+           w-full;
+  }
+
+  /* Botón secundario */
+  .btn-secondary {
+    @apply bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900
+           text-zinc-200 font-medium rounded-xl px-6 py-3
+           border border-zinc-700 transition-all duration-150 w-full;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-zinc-900 border border-zinc-800 rounded-2xl p-4;
+  }
+}
+
+/* Animación de entrada de página */
+.page-enter {
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
