@@ -1,17 +1,22 @@
-import { DICCIONARIO_BASE, PALABRAS_TIPO } from './diccionario.js'
+import { DICCIONARIO_BASE, PALABRAS_TIPO, PALABRAS_CONSULTA } from './diccionario.js'
 
 /**
  * Parsea un texto libre y devuelve un objeto con tipo, monto y categoria detectados.
- * Recibe un diccionarioPersonal opcional (desde Supabase) para fusionar con el base.
- *
  * @param {string} texto
- * @param {Record<string,string>} diccionarioPersonal  — { palabra: categoria_id }
- * @returns {{ tipo: string|null, monto: number|null, categoria: string|null, confianza: number }}
+ * @param {Record<string,string>} diccionarioPersonal  — { palabra: nombreCategoria }
+ * @returns {{ tipo: string|null, monto: number|null, categoria: string|null, esConsulta: boolean }}
  */
 export function parsearMensaje(texto, diccionarioPersonal = {}) {
+  const norm = texto.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')  // quita tildes para comparar
+
   const textoNorm = texto.toLowerCase().trim()
 
   const diccionario = { ...DICCIONARIO_BASE, ...diccionarioPersonal }
+
+  // 0. Detectar si es una consulta
+  const esConsulta = PALABRAS_CONSULTA.some(p => textoNorm.includes(p))
+  if (esConsulta) return { tipo: null, monto: null, categoria: null, esConsulta: true }
 
   // 1. Detectar tipo
   let tipo = null
@@ -22,52 +27,54 @@ export function parsearMensaje(texto, diccionarioPersonal = {}) {
     }
   }
 
-  // 2. Extraer monto
-  // Soporta: 3500 | $3.500 | 3500 pesos | $3,500 | 1200000
-  const montoRegex = /\$?\s*(\d[\d.,]*)(?:\s*(?:pesos?|ars))?/i
-  const matchMonto = textoNorm.match(montoRegex)
+  // 2. Extraer monto — soporta: 3500 | $3.500 | 3500 pesos | 3k | 3.5k | 50 mil | $1.200.000
   let monto = null
+  const montoRegex = /\$?\s*(\d[\d.,]*)(?:\s*(k|mil(?:es)?(?:\s+pesos?)?))?/i
+  const matchMonto = textoNorm.match(montoRegex)
   if (matchMonto) {
-    const raw = matchMonto[1].replace(/[.,]/g, '')
-    monto = parseInt(raw, 10)
+    const sufijo = (matchMonto[2] || '').trim().toLowerCase()
+    if (sufijo.startsWith('k')) {
+      // 3k = 3000, 3.5k = 3500
+      const base = parseFloat(matchMonto[1].replace(',', '.'))
+      monto = Math.round(base * 1000)
+    } else if (sufijo.startsWith('mil')) {
+      // 50 mil = 50000, 1.5 mil = 1500 (raro pero válido)
+      const base = parseFloat(matchMonto[1].replace(',', '.'))
+      monto = Math.round(base * 1000)
+    } else {
+      // Número normal: quitar separadores de miles (puntos y comas)
+      const raw = matchMonto[1].replace(/[.,]/g, '')
+      monto = parseInt(raw, 10)
+    }
+    if (isNaN(monto) || monto <= 0) monto = null
   }
 
-  // 3. Detectar categoría
+  // 3. Detectar categoría — primero coincidencia exacta, luego parcial
   let categoria = null
-  let confianza = 0
 
-  const palabras = textoNorm.split(/[\s,]+/)
-  for (const palabra of palabras) {
-    const palabraNorm = palabra.replace(/[^a-záéíóúüñ_]/gi, '')
-    if (diccionario[palabraNorm]) {
-      categoria = diccionario[palabraNorm]
-      confianza = 1
+  const tokens = textoNorm.split(/[\s,]+/)
+  for (const token of tokens) {
+    const limpio = token.replace(/[^a-záéíóúüñ_]/gi, '')
+    if (limpio && diccionario[limpio]) {
+      categoria = diccionario[limpio]
       break
     }
   }
 
-  // Fallback: buscar coincidencia parcial
   if (!categoria) {
     for (const [clave, cat] of Object.entries(diccionario)) {
       if (textoNorm.includes(clave)) {
         categoria = cat
-        confianza = 0.8
         break
       }
     }
   }
 
-  return { tipo, monto, categoria, confianza }
+  return { tipo, monto, categoria, esConsulta: false }
 }
 
-/**
- * Formatea un monto como moneda ARS
- */
 export function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0
   }).format(n)
 }

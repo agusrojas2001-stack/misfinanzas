@@ -65,12 +65,6 @@ export default function MenuPage() {
           sublabel="Definir límites por categoría"
           onClick={() => navigate('/presupuesto')}
         />
-        <MenuItem
-          emoji="🌙"
-          label="Tema"
-          sublabel="Oscuro (predeterminado)"
-          onClick={() => {}}
-        />
       </div>
 
       <div className="space-y-2">
@@ -78,13 +72,8 @@ export default function MenuPage() {
         <MenuItem
           emoji="👤"
           label="Editar perfil"
-          sublabel="Cambiar nombre o email"
-          onClick={() => {}}
-        />
-        <MenuItem
-          emoji="🔑"
-          label="Cambiar contraseña"
-          onClick={() => {}}
+          sublabel="Cambiar nombre o contraseña"
+          onClick={() => navigate('/perfil')}
         />
         <MenuItem
           emoji="🚪"
