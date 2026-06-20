@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 import { calcularInsights } from '../lib/insights'
 import InsightCard from '../components/Insights/InsightCard'
 import {
-  ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts'
 
@@ -46,7 +46,7 @@ function formatARS(n) {
 
 function formatCompact(n) {
   return new Intl.NumberFormat('es-AR', {
-    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1,
+    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 2,
   }).format(n)
 }
 
@@ -86,7 +86,7 @@ function SaldoCard({ label, monto, cantidad, color, emoji }) {
         <span className="text-base">{emoji}</span>
         <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide truncate">{label}</span>
       </div>
-      <p className={`text-sm font-bold ${color} leading-tight truncate`}>{formatCompact(monto)}</p>
+      <p className={`text-xs font-bold ${color} leading-tight truncate`}>{formatARS(monto)}</p>
       <p className="text-xs text-zinc-600 mt-1">{cantidad} mov.</p>
     </div>
   )
@@ -110,6 +110,93 @@ function DolarBadge() {
       <span className="text-xs text-zinc-300 font-medium">
         Blue <span className="text-emerald-400">${dolar.venta?.toLocaleString('es-AR')}</span>
       </span>
+    </div>
+  )
+}
+
+function PieGastos({ movimientos }) {
+  const [sel, setSel] = useState(null)
+
+  const dataGastos = Object.values(
+    movimientos.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
+      const key = m.categoria_id
+      if (!acc[key]) acc[key] = { name: `${m.categorias?.emoji ?? ''} ${m.categorias?.nombre ?? 'Otros'}`, value: 0 }
+      acc[key].value += m.monto
+      return acc
+    }, {})
+  ).sort((a, b) => b.value - a.value)
+
+  const total = dataGastos.reduce((s, d) => s + d.value, 0)
+  const selCat = sel !== null ? dataGastos[sel] : null
+
+  if (dataGastos.length === 0) return (
+    <div className="card flex items-center justify-center py-10 text-center">
+      <div><p className="text-2xl mb-2">🥧</p><p className="text-zinc-500 text-sm">Sin gastos este mes</p></div>
+    </div>
+  )
+
+  return (
+    <div className="card">
+      <h2 className="text-sm font-semibold text-zinc-300 mb-3">Gastos por categoría</h2>
+      <ResponsiveContainer width="100%" height={200}>
+        <PieChart>
+          <Pie
+            data={dataGastos}
+            cx="50%" cy="50%"
+            innerRadius={55} outerRadius={85}
+            paddingAngle={3}
+            dataKey="value"
+            onClick={(_, i) => setSel(prev => prev === i ? null : i)}
+          >
+            {dataGastos.map((_, i) => (
+              <Cell
+                key={i}
+                fill={COLORES_PIE[i % COLORES_PIE.length]}
+                opacity={sel === null || sel === i ? 1 : 0.3}
+                style={{ cursor: 'pointer', outline: 'none' }}
+              />
+            ))}
+          </Pie>
+          <Tooltip content={<TooltipARS />} />
+        </PieChart>
+      </ResponsiveContainer>
+
+      {/* Detalle del slice seleccionado */}
+      <div className="min-h-[28px] flex items-center justify-center mb-2">
+        {selCat ? (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ background: `${COLORES_PIE[sel % COLORES_PIE.length]}20` }}>
+            <span className="text-sm font-semibold" style={{ color: COLORES_PIE[sel % COLORES_PIE.length] }}>
+              {selCat.name}
+            </span>
+            <span className="text-xs text-zinc-400">
+              {formatARS(selCat.value)} · {Math.round((selCat.value / total) * 100)}%
+            </span>
+          </div>
+        ) : (
+          <p className="text-xs text-zinc-600">Tocá una sección para ver el detalle</p>
+        )}
+      </div>
+
+      {/* Lista compacta scrolleable */}
+      <div className="space-y-0.5 max-h-36 overflow-y-auto">
+        {dataGastos.map((cat, i) => (
+          <button
+            key={i}
+            onClick={() => setSel(prev => prev === i ? null : i)}
+            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-left
+              ${sel === i ? 'bg-zinc-800' : 'hover:bg-zinc-800/50'}`}
+          >
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ background: COLORES_PIE[i % COLORES_PIE.length] }} />
+            <span className="text-xs text-zinc-400 flex-1 truncate">{cat.name}</span>
+            <span className="text-xs font-semibold text-zinc-300 flex-shrink-0">{formatCompact(cat.value)}</span>
+            <span className="text-[10px] text-zinc-600 w-8 text-right flex-shrink-0">
+              {Math.round((cat.value / total) * 100)}%
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -355,37 +442,7 @@ export default function DashboardPage() {
           {/* Gráficos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Pie: gastos del mes por categoría */}
-            {(() => {
-              const dataGastos = Object.values(
-                movimientos.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
-                  const key = m.categoria_id
-                  if (!acc[key]) acc[key] = { name: `${m.categorias?.emoji ?? ''} ${m.categorias?.nombre ?? 'Otros'}`, value: 0 }
-                  acc[key].value += m.monto
-                  return acc
-                }, {})
-              ).sort((a, b) => b.value - a.value)
-
-              return dataGastos.length === 0 ? (
-                <div className="card flex items-center justify-center py-10 text-center">
-                  <div><p className="text-2xl mb-2">🥧</p><p className="text-zinc-500 text-sm">Sin gastos este mes</p></div>
-                </div>
-              ) : (
-                <div className="card">
-                  <h2 className="text-sm font-semibold text-zinc-300 mb-4">Gastos por categoría</h2>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={dataGastos} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
-                           paddingAngle={3} dataKey="value">
-                        {dataGastos.map((_, i) => <Cell key={i} fill={COLORES_PIE[i % COLORES_PIE.length]} />)}
-                      </Pie>
-                      <Tooltip content={<TooltipARS />} />
-                      <Legend iconType="circle" iconSize={8}
-                              formatter={v => <span className="text-xs text-zinc-400">{v}</span>} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )
-            })()}
+            <PieGastos key={mes} movimientos={movimientos} />
 
             {/* Barras: últimos 6 meses */}
             <div className="card">

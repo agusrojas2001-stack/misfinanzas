@@ -21,7 +21,7 @@ function formatARS(n) {
 
 function formatCompact(n) {
   return new Intl.NumberFormat('es-AR', {
-    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1,
+    style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 2,
   }).format(n)
 }
 

@@ -311,7 +311,7 @@ export default function AnalisisPage() {
               <div key={label} className="card py-3 px-2 text-center">
                 <p className="text-[10px] text-zinc-500 mb-1">{label}</p>
                 <p className={`text-xs font-bold ${color} leading-tight`}>
-                  {new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 }).format(val)}
+                  {new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 2 }).format(val)}
                 </p>
               </div>
             ))}
@@ -453,7 +453,7 @@ export default function AnalisisPage() {
               <div>
                 <h2 className="font-bold text-zinc-100">✨ Análisis profundo con IA</h2>
                 <p className="text-xs text-zinc-500 mt-1">
-                  Claude analiza tus datos del mes y te da recomendaciones concretas en español rioplatense.
+                  Claude analiza tus datos del mes y te da recomendaciones concretas.
                 </p>
               </div>
               <div className="flex-shrink-0 text-right">
