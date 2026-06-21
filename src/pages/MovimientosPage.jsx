@@ -158,15 +158,15 @@ export default function MovimientosPage() {
       <div className="card space-y-3">
         <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Filtrar por período</p>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="text-xs text-zinc-600">Desde</label>
             <input type="date" value={desde} onChange={e => setDesde(e.target.value)}
-              className="input-dark text-sm" />
+              className="input-dark" style={{ colorScheme: 'dark' }} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="text-xs text-zinc-600">Hasta</label>
             <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
-              className="input-dark text-sm" />
+              className="input-dark" style={{ colorScheme: 'dark' }} />
           </div>
         </div>
         <div className="flex gap-2">
