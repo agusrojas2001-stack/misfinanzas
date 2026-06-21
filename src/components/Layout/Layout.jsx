@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNotificaciones } from '../../hooks/useNotificaciones'
+import { evaluarReglas } from '../../lib/evaluarReglas'
+import NotifPanel from '../Notifications/NotifPanel'
 
 const NAV_ITEMS = [
   { path: '/',            label: 'Inicio',      emoji: '🏠' },
@@ -16,6 +19,21 @@ export default function Layout() {
   const { pathname } = useLocation()
   const { user, perfil, signOut } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false)
+
+  const { notificaciones, noLeidas, marcarLeida, marcarTodasLeidas, eliminar: eliminarNotif, refetch: refetchNotifs } = useNotificaciones()
+
+  useEffect(() => {
+    if (!user) return
+    const last = localStorage.getItem('lastEvalReglas')
+    const now = Date.now()
+    if (!last || now - Number(last) > 6 * 60 * 60 * 1000) {
+      setTimeout(() => evaluarReglas(user.id).then(() => {
+        localStorage.setItem('lastEvalReglas', String(now))
+        refetchNotifs()
+      }), 2000)
+    }
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isChatbot = pathname === '/chatbot'
 
@@ -35,13 +53,33 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
 
-      {/* Backdrop */}
+      {/* Backdrop menú */}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
           onClick={close}
         />
       )}
+
+      {/* Backdrop panel de notificaciones */}
+      {notifPanelOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setNotifPanelOpen(false)}
+        />
+      )}
+
+      {/* Panel de notificaciones */}
+      <NotifPanel
+        open={notifPanelOpen}
+        notificaciones={notificaciones}
+        noLeidas={noLeidas}
+        onMarcarLeida={marcarLeida}
+        onMarcarTodasLeidas={marcarTodasLeidas}
+        onEliminar={eliminarNotif}
+        onClose={() => setNotifPanelOpen(false)}
+        onNavegar={(url) => { if (url) navigate(url); setNotifPanelOpen(false) }}
+      />
 
       {/* Drawer derecho */}
       <div className={`fixed top-0 right-0 h-full w-72 z-50 bg-zinc-900 border-l border-zinc-800
@@ -117,6 +155,12 @@ export default function Layout() {
               <span className="text-lg">🏷️</span> Categorías
             </button>
             <button
+              onClick={() => navTo('/recordatorios')}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <span className="text-lg">🔔</span> Recordatorios
+            </button>
+            <button
               onClick={() => navTo('/perfil')}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
             >
@@ -153,6 +197,22 @@ export default function Layout() {
             <img src="/favicon.svg" alt="Mis Numeritos" className="w-7 h-7 rounded-lg" />
             <span className="text-sm font-bold text-violet-400">Mis Numeritos</span>
           </button>
+          {/* Campana de notificaciones */}
+          <button
+            onClick={() => setNotifPanelOpen(true)}
+            className="w-9 h-9 rounded-xl hover:bg-zinc-800 flex items-center justify-center
+                       text-zinc-400 hover:text-zinc-200 transition-all active:scale-95 relative"
+          >
+            <span className="text-lg">🔔</span>
+            {noLeidas > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-rose-500
+                               flex items-center justify-center text-[10px] font-bold text-white px-1">
+                {noLeidas > 9 ? '9+' : noLeidas}
+              </span>
+            )}
+          </button>
+
+          {/* Botón hamburguesa */}
           <button
             onClick={() => setDrawerOpen(true)}
             className="w-9 h-9 rounded-xl hover:bg-zinc-800 flex items-center justify-center

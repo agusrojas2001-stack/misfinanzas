@@ -12,6 +12,7 @@ import AnalisisPage from './pages/AnalisisPage'
 import ProfilePage from './pages/ProfilePage'
 import MenuPage from './pages/MenuPage'
 import LoginPage from './pages/LoginPage'
+import RecordatoriosPage from './pages/RecordatoriosPage'
 
 function LoadingScreen() {
   return (
@@ -67,6 +68,7 @@ function AppRoutes() {
         <Route path="analisis" element={<AnalisisPage />} />
         <Route path="perfil" element={<ProfilePage />} />
         <Route path="menu" element={<MenuPage />} />
+        <Route path="recordatorios" element={<RecordatoriosPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

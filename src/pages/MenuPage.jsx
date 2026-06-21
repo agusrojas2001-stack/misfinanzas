@@ -60,6 +60,12 @@ export default function MenuPage() {
           onClick={() => navigate('/categorias')}
         />
         <MenuItem
+          emoji="🔔"
+          label="Recordatorios"
+          sublabel="Avisos de pagos y gastos recurrentes"
+          onClick={() => navigate('/recordatorios')}
+        />
+        <MenuItem
           emoji="💰"
           label="Presupuesto mensual"
           sublabel="Definir límites por categoría"
