@@ -236,7 +236,7 @@ export default function RegistrarPage() {
         )}
 
         {/* Fecha */}
-        <div className="card space-y-2">
+        <div className="card space-y-2 overflow-hidden">
           <label className="text-xs text-zinc-500 font-medium uppercase tracking-wide block">
             Fecha
           </label>
@@ -244,7 +244,8 @@ export default function RegistrarPage() {
             type="date"
             value={fecha}
             onChange={e => setFecha(e.target.value)}
-            className="input-dark"
+            className="input-dark max-w-full"
+            style={{ colorScheme: 'dark' }}
           />
         </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCategorias } from '../hooks/useCategorias'
@@ -55,6 +55,25 @@ export default function ChatbotPage() {
   const [guardando, setGuardando] = useState(false)
   const [dicPersonal, setDicPersonal] = useState({})
   const bottomRef = useRef(null)
+  const inputBarRef = useRef(null)
+
+  const NAV_BOTTOM = 'calc(4rem + env(safe-area-inset-bottom, 0px))'
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    function update() {
+      if (!inputBarRef.current) return
+      const keyboardH = window.innerHeight - vv.height - vv.offsetTop
+      inputBarRef.current.style.bottom = keyboardH > 80 ? `${keyboardH}px` : NAV_BOTTOM
+    }
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
 
   // Cargar diccionario personal del usuario
   useEffect(() => {
@@ -199,8 +218,8 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="page-enter flex flex-col" style={{ height: 'calc(100dvh - 7rem)' }}>
-      {/* Header */}
+    <div className="page-enter flex flex-col flex-1 min-h-0">
+      {/* Header — fijo arriba */}
       <div className="px-4 md:px-6 pt-4 pb-3 border-b border-zinc-800 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-violet-600 flex items-center justify-center text-xl">🪙</div>
@@ -211,8 +230,8 @@ export default function ChatbotPage() {
         </div>
       </div>
 
-      {/* Mensajes */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
+      {/* Mensajes — único área scrolleable */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4 pb-36">
         {mensajes.map(m => (
           <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.from === 'bot' && (
@@ -242,36 +261,42 @@ export default function ChatbotPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Chips de acceso rápido */}
-      <div className="px-4 md:px-6 pt-2 pb-1 flex gap-2 flex-shrink-0">
-        {CHIPS_RAPIDOS.map(chip => (
-          <button key={chip.prefijo}
-            onClick={() => setInput(chip.prefijo)}
-            className="text-xs px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-300 transition-all">
-            {chip.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Input */}
-      <div className="px-4 md:px-6 py-3 border-t border-zinc-800 flex-shrink-0">
-        <form onSubmit={handleSend} className="flex gap-2">
-          <input
-            type="text"
-            placeholder="gasté 3500 en uber..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            className="input-dark flex-1"
-            autoComplete="off"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || guardando}
-            className="bg-violet-600 hover:bg-violet-500 active:bg-violet-700 disabled:opacity-40
-                       text-white rounded-xl px-4 transition-all duration-150 flex-shrink-0 text-lg">
-            ➤
-          </button>
-        </form>
+      {/* Input bar — fixed, sube con el teclado */}
+      <div
+        ref={inputBarRef}
+        className="fixed left-0 right-0 z-30 bg-zinc-950/98 backdrop-blur-sm border-t border-zinc-800"
+        style={{ bottom: NAV_BOTTOM }}
+      >
+        {/* Chips */}
+        <div className="px-4 pt-2 pb-1 flex gap-2">
+          {CHIPS_RAPIDOS.map(chip => (
+            <button key={chip.prefijo}
+              onClick={() => setInput(chip.prefijo)}
+              className="text-xs px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-300 transition-all">
+              {chip.label}
+            </button>
+          ))}
+        </div>
+        {/* Input */}
+        <div className="px-4 pb-3">
+          <form onSubmit={handleSend} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="gasté 3500 en uber..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              className="input-dark flex-1"
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || guardando}
+              className="bg-violet-600 hover:bg-violet-500 active:bg-violet-700 disabled:opacity-40
+                         text-white rounded-xl px-4 transition-all duration-150 flex-shrink-0 text-lg">
+              ➤
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
