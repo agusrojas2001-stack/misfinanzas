@@ -35,8 +35,13 @@ REGLAS:
 - Foco real: los gastos variables son donde el usuario puede actuar`
 
 export async function generarAnalisis(datos) {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  if (!apiKey) {
+    throw new Error('La clave de IA no está configurada. Agregá VITE_ANTHROPIC_API_KEY en las variables de entorno de Vercel.')
+  }
+
   const client = new Anthropic({
-    apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+    apiKey,
     dangerouslyAllowBrowser: true,
   })
 

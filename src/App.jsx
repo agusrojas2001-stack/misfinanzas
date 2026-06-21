@@ -10,6 +10,7 @@ import CategoriasPage from './pages/CategoriasPage'
 import MovimientosPage from './pages/MovimientosPage'
 import AnalisisPage from './pages/AnalisisPage'
 import ProfilePage from './pages/ProfilePage'
+import MenuPage from './pages/MenuPage'
 import LoginPage from './pages/LoginPage'
 
 function LoadingScreen() {
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="movimientos" element={<MovimientosPage />} />
         <Route path="analisis" element={<AnalisisPage />} />
         <Route path="perfil" element={<ProfilePage />} />
+        <Route path="menu" element={<MenuPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

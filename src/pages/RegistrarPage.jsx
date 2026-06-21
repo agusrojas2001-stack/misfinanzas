@@ -85,13 +85,7 @@ export default function RegistrarPage() {
     }
 
     setExito(true)
-    setTimeout(() => {
-      setExito(false)
-      setMonto('')
-      setCategoriaId('')
-      setConcepto('')
-      setFecha(hoy())
-    }, 1500)
+    setTimeout(() => navigate('/'), 1200)
   }
 
   const canSubmit = monto && categoriaId && !guardando

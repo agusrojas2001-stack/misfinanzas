@@ -1,11 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom'
 
 const tabs = [
-  { to: '/',             label: 'Inicio',      emoji: '🏠' },
-  { to: '/presupuesto',  label: 'Presupuesto', emoji: '📊' },
-  { to: '/registrar',    label: 'Registrar',   emoji: '➕', special: true },
-  { to: '/chatbot',      label: 'Monedita',    emoji: '💬' },
-  { to: '/analisis',     label: 'Análisis',    emoji: '📈' },
+  { to: '/',         label: 'Inicio',   emoji: '🏠' },
+  { to: '/chatbot',  label: 'Monedita', emoji: '💬' },
+  { to: '/metas',    label: 'Metas',    emoji: '🎯' },
+  { to: '/menu',     label: 'Menú',     emoji: '⚙️' },
+  { to: '/analisis', label: 'Análisis', emoji: '📈' },
 ]
 
 export default function BottomNav() {
@@ -19,31 +19,6 @@ export default function BottomNav() {
             ? location.pathname === '/'
             : location.pathname.startsWith(tab.to)
 
-          if (tab.special) {
-            return (
-              <NavLink
-                key={tab.to}
-                to={tab.to}
-                className="flex flex-col items-center justify-center -mt-5"
-              >
-                <div className={`
-                  w-14 h-14 rounded-full flex items-center justify-center text-2xl
-                  shadow-lg shadow-violet-900/50 transition-all duration-200
-                  ${isActive
-                    ? 'bg-violet-500 scale-110'
-                    : 'bg-violet-600 hover:bg-violet-500 active:scale-95'}
-                `}>
-                  {tab.emoji}
-                </div>
-                <span className={`text-[10px] mt-1 font-medium transition-colors ${
-                  isActive ? 'text-violet-400' : 'text-zinc-500'
-                }`}>
-                  {tab.label}
-                </span>
-              </NavLink>
-            )
-          }
-
           return (
             <NavLink
               key={tab.to}
@@ -52,9 +27,7 @@ export default function BottomNav() {
               className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl
                          transition-all duration-200 active:scale-95"
             >
-              <span className={`text-2xl transition-all duration-200 ${
-                isActive ? 'scale-110' : ''
-              }`}>
+              <span className={`text-2xl transition-all duration-200 ${isActive ? 'scale-110' : ''}`}>
                 {tab.emoji}
               </span>
               <span className={`text-[10px] font-medium transition-colors ${

@@ -273,6 +273,20 @@ export default function DashboardPage() {
   const nombre = perfil?.nombre || user?.email?.split('@')[0] || 'vos'
 
   return (
+    <>
+    <button
+      onClick={() => navigate('/registrar')}
+      aria-label="Registrar movimiento"
+      className="fixed z-40 w-[60px] h-[60px] rounded-full
+                 bg-violet-600 hover:bg-violet-500 active:scale-95
+                 text-white text-3xl font-light
+                 flex items-center justify-center
+                 shadow-lg shadow-violet-900/60
+                 transition-all duration-150"
+      style={{ bottom: 90, right: 20 }}
+    >
+      +
+    </button>
     <div className="page-enter px-4 md:px-6 pt-4 pb-2 space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -445,7 +459,7 @@ export default function DashboardPage() {
             <PieGastos key={mes} movimientos={movimientos} />
 
             {/* Barras: últimos 6 meses */}
-            <div className="card">
+            <div className="card overflow-hidden">
               <h2 className="text-sm font-semibold text-zinc-300 mb-4">Últimos 6 meses</h2>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={dataMeses} barCategoryGap="30%" barGap={2}>
@@ -463,5 +477,6 @@ export default function DashboardPage() {
         </>
       )}
     </div>
+    </>
   )
 }

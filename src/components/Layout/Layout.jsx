@@ -11,7 +11,10 @@ export default function Layout() {
       {/* Barra superior con hamburguesa */}
       <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-sm border-b border-zinc-900 safe-top w-full">
       <div className="flex items-center justify-between px-6 h-11 max-w-4xl mx-auto">
-        <span className="text-sm font-bold text-violet-400">MisFinanzas 💸</span>
+        <div className="flex items-center gap-2">
+          <img src="/favicon.svg" alt="Mis Numeritos" className="w-7 h-7 rounded-lg" />
+          <span className="text-sm font-bold text-violet-400">Mis Numeritos</span>
+        </div>
         <button
           onClick={() => setDrawerOpen(true)}
           className="w-9 h-9 rounded-xl hover:bg-zinc-800 flex items-center justify-center

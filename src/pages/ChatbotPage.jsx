@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCategorias } from '../hooks/useCategorias'
 import { parsearMensaje, formatARS } from '../lib/parser'
 
+const EMOJIS_RAPIDOS = ['🛒','🍔','🚗','🏠','💊','📱','🎮','👕','✈️','🐾','📚','🎵','💇','🏋️','🎁']
+
 function hoy() {
   return new Date().toISOString().split('T')[0]
 }
@@ -47,7 +49,7 @@ const CHIPS_RAPIDOS = [
 
 export default function ChatbotPage() {
   const { user } = useAuth()
-  const { categorias } = useCategorias()
+  const { categorias, crearCategoria } = useCategorias()
   const [mensajes, setMensajes] = useState([MSG_BIENVENIDA])
   const [input, setInput]       = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -197,7 +199,7 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="page-enter flex flex-col" style={{ height: 'calc(100vh - 7rem)' }}>
+    <div className="page-enter flex flex-col" style={{ height: 'calc(100dvh - 7rem)' }}>
       {/* Header */}
       <div className="px-4 md:px-6 pt-4 pb-3 border-b border-zinc-800 flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -232,6 +234,7 @@ export default function ChatbotPage() {
                 onConfirmar={handleConfirmar}
                 onCancelar={handleCancelar}
                 guardando={guardando}
+                crearCategoria={crearCategoria}
               />
             )}
           </div>
@@ -260,7 +263,6 @@ export default function ChatbotPage() {
             onChange={e => setInput(e.target.value)}
             className="input-dark flex-1"
             autoComplete="off"
-            autoFocus
           />
           <button
             type="submit"
@@ -275,11 +277,19 @@ export default function ChatbotPage() {
   )
 }
 
-function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando }) {
+function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando, crearCategoria }) {
   const [datos, setDatos] = useState(datosProp)
+  const [catsLocales, setCatsLocales] = useState(datosProp.catsDelTipo)
   const [editandoMonto, setEditandoMonto] = useState(false)
   const [montoStr, setMontoStr] = useState(String(datosProp.monto))
   const [confirmado, setConfirmado] = useState(false)
+
+  // Mini-form nueva categoría
+  const [creandoCat, setCreandoCat] = useState(false)
+  const [nuevaEmoji, setNuevaEmoji] = useState('📦')
+  const [nuevaNombre, setNuevaNombre] = useState('')
+  const [guardandoCat, setGuardandoCat] = useState(false)
+  const [errorCat, setErrorCat] = useState('')
 
   function aplicarMonto() {
     const val = parseInt(montoStr.replace(/[.,]/g, ''), 10)
@@ -295,6 +305,35 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
   function cancelar() {
     setConfirmado(true)
     onCancelar()
+  }
+
+  async function handleCrearCat() {
+    if (!nuevaNombre.trim()) return
+    setGuardandoCat(true)
+    setErrorCat('')
+    const { error } = await crearCategoria({ nombre: nuevaNombre.trim(), emoji: nuevaEmoji, tipo: datos.tipo })
+    if (error) {
+      setErrorCat('No se pudo crear. Intentá de nuevo.')
+      setGuardandoCat(false)
+      return
+    }
+    // Fetch la nueva categoría para obtener su id
+    const { data } = await supabase
+      .from('categorias')
+      .select('*')
+      .eq('nombre', nuevaNombre.trim())
+      .eq('tipo', datos.tipo)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    if (data) {
+      setCatsLocales(prev => [...prev, data])
+      setDatos(d => ({ ...d, categoria: data }))
+    }
+    setGuardandoCat(false)
+    setCreandoCat(false)
+    setNuevaEmoji('📦')
+    setNuevaNombre('')
   }
 
   return (
@@ -336,21 +375,79 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
         {/* Selector de categoría */}
         <div>
           <p className="text-xs text-zinc-500 mb-1.5">Categoría</p>
-          {datos.catsDelTipo.length === 0 ? (
-            <p className="text-xs text-zinc-600">Sin categorías de {TIPOS_LABEL[datos.tipo].toLowerCase()}</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {datos.catsDelTipo.map(c => (
-                <button key={c.id}
-                  onClick={() => setDatos(d => ({ ...d, categoria: c }))}
-                  disabled={confirmado}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all
-                    ${datos.categoria?.id === c.id
-                      ? 'bg-violet-600/30 border-violet-500 text-violet-300'
-                      : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}>
-                  {c.emoji} {c.nombre}
+          <div className="flex flex-wrap gap-1.5">
+            {catsLocales.map(c => (
+              <button key={c.id}
+                onClick={() => setDatos(d => ({ ...d, categoria: c }))}
+                disabled={confirmado}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all
+                  ${datos.categoria?.id === c.id
+                    ? 'bg-violet-600/30 border-violet-500 text-violet-300'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}>
+                {c.emoji} {c.nombre}
+              </button>
+            ))}
+            {!confirmado && !creandoCat && (
+              <button
+                onClick={() => setCreandoCat(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border
+                           bg-zinc-900 border-zinc-700 text-violet-400 hover:border-violet-500 transition-all">
+                ＋
+              </button>
+            )}
+          </div>
+
+          {/* Mini-form nueva categoría */}
+          {creandoCat && (
+            <div className="mt-2 p-3 rounded-xl bg-zinc-900 border border-zinc-700 space-y-2">
+              <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">Nueva categoría</p>
+
+              {/* Emojis rápidos */}
+              <div className="flex flex-wrap gap-1.5">
+                {EMOJIS_RAPIDOS.map(e => (
+                  <button key={e} type="button"
+                    onClick={() => setNuevaEmoji(e)}
+                    className={`w-7 h-7 rounded-lg text-base flex items-center justify-center transition-all
+                      ${nuevaEmoji === e ? 'bg-violet-600/40 ring-1 ring-violet-500' : 'bg-zinc-800 hover:bg-zinc-700'}`}>
+                    {e}
+                  </button>
+                ))}
+                <input
+                  type="text"
+                  value={nuevaEmoji}
+                  onChange={e => setNuevaEmoji(e.target.value)}
+                  maxLength={2}
+                  placeholder="🔖"
+                  className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 text-center text-sm
+                             text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+              </div>
+
+              <input
+                autoFocus
+                type="text"
+                placeholder="Nombre de la categoría"
+                value={nuevaNombre}
+                onChange={e => setNuevaNombre(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCrearCat()}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-100
+                           placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+
+              {errorCat && <p className="text-[10px] text-rose-400">{errorCat}</p>}
+
+              <div className="flex gap-2">
+                <button onClick={() => { setCreandoCat(false); setNuevaNombre(''); setErrorCat('') }}
+                  className="flex-1 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-400 hover:border-zinc-600 transition-all">
+                  Cancelar
                 </button>
-              ))}
+                <button onClick={handleCrearCat}
+                  disabled={!nuevaNombre.trim() || guardandoCat}
+                  className="flex-1 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40
+                             text-white text-xs font-semibold transition-all">
+                  {guardandoCat ? '...' : 'Crear ✓'}
+                </button>
+              </div>
             </div>
           )}
         </div>

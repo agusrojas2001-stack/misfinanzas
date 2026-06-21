@@ -11,9 +11,9 @@ export default defineConfig(async ({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
         manifest: {
-          name: 'MisFinanzas',
-          short_name: 'Finanzas',
-          description: 'Tu app de finanzas personales',
+          name: 'Mis Numeritos',
+          short_name: 'Numeritos',
+          description: 'Tus finanzas personales, simples y claras.',
           theme_color: '#7c3aed',
           background_color: '#09090b',
           display: 'standalone',
