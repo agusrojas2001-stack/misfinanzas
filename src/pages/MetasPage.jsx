@@ -221,7 +221,7 @@ export default function MetasPage() {
             <div className="space-y-1">
               <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Fecha objetivo <span className="text-zinc-600 normal-case">(opcional)</span></label>
               <input type="date" value={fechaObj} onChange={e => setFechaObj(e.target.value)}
-                className="input-dark" />
+                className="input-dark min-w-0" style={{ colorScheme: 'dark' }} />
             </div>
           </div>
         </Modal>

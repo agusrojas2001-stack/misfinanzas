@@ -155,18 +155,18 @@ export default function MovimientosPage() {
       </div>
 
       {/* Filtro por rango de fechas */}
-      <div className="card space-y-3">
+      <div className="card space-y-3 overflow-hidden">
         <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Filtrar por período</p>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1 min-w-0">
+          <div className="space-y-1 min-w-0 overflow-hidden">
             <label className="text-xs text-zinc-600">Desde</label>
             <input type="date" value={desde} onChange={e => setDesde(e.target.value)}
-              className="input-dark" style={{ colorScheme: 'dark' }} />
+              className="input-dark min-w-0" style={{ colorScheme: 'dark' }} />
           </div>
-          <div className="space-y-1 min-w-0">
+          <div className="space-y-1 min-w-0 overflow-hidden">
             <label className="text-xs text-zinc-600">Hasta</label>
             <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
-              className="input-dark" style={{ colorScheme: 'dark' }} />
+              className="input-dark min-w-0" style={{ colorScheme: 'dark' }} />
           </div>
         </div>
         <div className="flex gap-2">
@@ -386,7 +386,8 @@ export default function MovimientosPage() {
             {/* Fecha */}
             <div className="space-y-1">
               <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Fecha</label>
-              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="input-dark" />
+              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
+                className="input-dark min-w-0" style={{ colorScheme: 'dark' }} />
             </div>
           </div>
         </Modal>

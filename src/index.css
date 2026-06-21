@@ -22,9 +22,13 @@
     font-size: 1rem;
   }
 
-  /* El input de fecha en iOS puede tener un ancho mínimo nativo que hace overflow */
+  /* El input de fecha en iOS tiene un mínimo nativo que CSS no puede sobreescribir
+     sin appearance:none. Con appearance:none el date picker sigue funcionando. */
   input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
     display: block;
+    width: 100%;
     min-width: 0;
     max-width: 100%;
   }

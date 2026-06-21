@@ -244,7 +244,7 @@ export default function RegistrarPage() {
             type="date"
             value={fecha}
             onChange={e => setFecha(e.target.value)}
-            className="input-dark max-w-full"
+            className="input-dark min-w-0 max-w-full"
             style={{ colorScheme: 'dark' }}
           />
         </div>
