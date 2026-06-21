@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useNotificaciones } from '../../hooks/useNotificaciones'
 import { evaluarReglas } from '../../lib/evaluarReglas'
 import NotifPanel from '../Notifications/NotifPanel'
+import PushPermiso from '../Notifications/PushPermiso'
 
 const NAV_ITEMS = [
   { path: '/',            label: 'Inicio',      emoji: '🏠' },
@@ -236,6 +237,7 @@ export default function Layout() {
       </main>
 
       <BottomNav />
+      <PushPermiso />
     </div>
   )
 }

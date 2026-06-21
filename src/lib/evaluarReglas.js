@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { enviarPush } from './pushService'
 
 // ============================================================
 // calcularProximoAviso
@@ -153,6 +154,14 @@ export async function evaluarReglas(userId) {
           regla_id: reglaId,
         }),
       ])
+
+      // Disparar push si el usuario tiene suscripción activa
+      enviarPush(userId, supabase, {
+        titulo: datos.titulo,
+        mensaje: datos.mensaje,
+        emoji: datos.emoji,
+        url: datos.accion_url,
+      })
     }
 
     // --------------------------------------------------------

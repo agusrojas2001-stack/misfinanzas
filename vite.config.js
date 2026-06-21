@@ -8,6 +8,9 @@ export default defineConfig(async ({ mode }) => {
     const { VitePWA } = await import('vite-plugin-pwa')
     plugins.push(
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
         manifest: {
@@ -25,18 +28,8 @@ export default defineConfig(async ({ mode }) => {
             { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
           ],
         },
-        workbox: {
+        injectManifest: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\//,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'supabase-cache',
-                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
-              },
-            },
-          ],
         },
       })
     )
