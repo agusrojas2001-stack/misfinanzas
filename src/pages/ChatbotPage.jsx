@@ -54,8 +54,20 @@ export default function ChatbotPage() {
   const [input, setInput]       = useState('')
   const [guardando, setGuardando] = useState(false)
   const [dicPersonal, setDicPersonal] = useState({})
+  const [chatBarVisible, setChatBarVisible] = useState(true)
   const bottomRef = useRef(null)
   const inputBarRef = useRef(null)
+  const blurTimerRef = useRef(null)
+
+  function handleCardFocus() {
+    clearTimeout(blurTimerRef.current)
+    setChatBarVisible(false)
+  }
+
+  function handleCardBlur() {
+    // Timeout para evitar flash si el foco pasa de un input al otro dentro de la card
+    blurTimerRef.current = setTimeout(() => setChatBarVisible(true), 150)
+  }
 
   const NAV_BOTTOM = 'calc(4rem + env(safe-area-inset-bottom, 0px))'
 
@@ -254,23 +266,27 @@ export default function ChatbotPage() {
               </div>
             )}
             {m.tipo === 'confirmacion' && (
-              <ConfirmacionCard
-                datos={m.datos}
-                onConfirmar={handleConfirmar}
-                onCancelar={handleCancelar}
-                guardando={guardando}
-                crearCategoria={crearCategoria}
-              />
+              <div onFocus={handleCardFocus} onBlur={handleCardBlur}>
+                <ConfirmacionCard
+                  datos={m.datos}
+                  onConfirmar={handleConfirmar}
+                  onCancelar={handleCancelar}
+                  guardando={guardando}
+                  crearCategoria={crearCategoria}
+                />
+              </div>
             )}
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input bar — fixed, sube con el teclado */}
+      {/* Input bar — fixed, sube con el teclado. Se oculta cuando el foco está en la card */}
       <div
         ref={inputBarRef}
-        className="fixed left-0 right-0 z-30 bg-zinc-950/98 backdrop-blur-sm border-t border-zinc-800"
+        className={`fixed left-0 right-0 z-30 bg-zinc-950/98 backdrop-blur-sm border-t border-zinc-800
+                    transition-opacity duration-150
+                    ${chatBarVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         style={{ bottom: NAV_BOTTOM }}
       >
         {/* Chips */}
