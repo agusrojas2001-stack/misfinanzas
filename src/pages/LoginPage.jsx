@@ -71,12 +71,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
       {/* Logo */}
       <div className="text-center mb-8">
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-600 to-violet-800
-                        flex items-center justify-center text-4xl mx-auto mb-4
-                        shadow-2xl shadow-violet-900/50">
-          💸
-        </div>
-        <h1 className="text-3xl font-extrabold text-zinc-100">MisFinanzas</h1>
+        <img
+          src="/favicon.svg"
+          alt="Mis Numeritos"
+          className="w-20 h-20 mx-auto mb-4 rounded-3xl shadow-2xl shadow-violet-900/50"
+        />
+        <h1 className="text-3xl font-extrabold text-zinc-100">Mis Numeritos</h1>
         <p className="text-zinc-500 text-sm mt-1">Tu plata, clara y simple.</p>
       </div>
 

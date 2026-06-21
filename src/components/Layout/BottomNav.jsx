@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
 const tabs = [
@@ -10,9 +11,29 @@ const tabs = [
 
 export default function BottomNav() {
   const location = useLocation()
+  const navRef = useRef(null)
+
+  // Mantiene el nav visible cuando el teclado sube (iOS/Android)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+
+    function update() {
+      if (!navRef.current) return
+      const shift = window.innerHeight - vv.height - vv.offsetTop
+      navRef.current.style.transform = shift > 0 ? `translateY(-${Math.round(shift)}px)` : ''
+    }
+
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 safe-bottom">
+    <nav ref={navRef} className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 safe-bottom">
       <div className="flex items-center justify-around h-16 max-w-4xl mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = tab.to === '/'

@@ -283,7 +283,7 @@ export default function DashboardPage() {
                  flex items-center justify-center
                  shadow-lg shadow-violet-900/60
                  transition-all duration-150"
-      style={{ bottom: 90, right: 20 }}
+      style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', right: 20 }}
     >
       +
     </button>
