@@ -65,7 +65,13 @@ export default function ChatbotPage() {
     function update() {
       if (!inputBarRef.current) return
       const keyboardH = window.innerHeight - vv.height - vv.offsetTop
-      inputBarRef.current.style.bottom = keyboardH > 80 ? `${keyboardH}px` : NAV_BOTTOM
+      if (keyboardH > 80) {
+        inputBarRef.current.style.bottom = `${keyboardH}px`
+        // Scroll al último mensaje para que el botón Guardar quede visible sobre el teclado
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
+      } else {
+        inputBarRef.current.style.bottom = NAV_BOTTOM
+      }
     }
     vv.addEventListener('resize', update)
     vv.addEventListener('scroll', update)
@@ -231,7 +237,7 @@ export default function ChatbotPage() {
       </div>
 
       {/* Mensajes — único área scrolleable */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4 pb-36">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4 pb-52">
         {mensajes.map(m => (
           <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.from === 'bot' && (
@@ -380,7 +386,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
                 onChange={e => setMontoStr(e.target.value)}
                 onBlur={aplicarMonto}
                 onKeyDown={e => e.key === 'Enter' && aplicarMonto()}
-                className="w-28 bg-zinc-900 border border-violet-500 rounded-lg px-2 py-1 text-sm text-zinc-100 focus:outline-none"
+                className="w-28 bg-zinc-900 border border-violet-500 rounded-lg px-2 py-1 text-zinc-100 focus:outline-none"
               />
             </div>
           ) : (
@@ -455,7 +461,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
                 value={nuevaNombre}
                 onChange={e => setNuevaNombre(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleCrearCat()}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-100
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100
                            placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
               />
 
@@ -486,7 +492,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
             value={datos.concepto ?? ''}
             onChange={e => setDatos(d => ({ ...d, concepto: e.target.value }))}
             disabled={confirmado}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-200
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-200
                        placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 disabled:opacity-50"
           />
         </div>

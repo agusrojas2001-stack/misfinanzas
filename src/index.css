@@ -17,6 +17,18 @@
     overscroll-behavior: none;
   }
 
+  /* Previene el zoom automático de Safari en inputs (requiere font-size >= 16px) */
+  input, textarea, select {
+    font-size: 1rem;
+  }
+
+  /* El input de fecha en iOS puede tener un ancho mínimo nativo que hace overflow */
+  input[type="date"] {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+  }
+
   /* Scrollbar oscuro */
   ::-webkit-scrollbar {
     width: 4px;

@@ -242,7 +242,10 @@ export default function MovimientosPage() {
               {/* Lista */}
               <div className="space-y-2">
                 {porMes[mes].map(m => (
-                  <div key={m.id} className="card flex items-center gap-3 py-3">
+                  <div key={m.id}
+                    onClick={() => abrirEditar(m)}
+                    className="card flex items-center gap-3 py-3 cursor-pointer
+                               hover:border-zinc-700 active:scale-[0.99] transition-all">
                     <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-xl flex-shrink-0">
                       {m.categorias?.emoji ?? '💸'}
                     </div>
@@ -257,18 +260,12 @@ export default function MovimientosPage() {
                     <p className={`font-bold text-sm flex-shrink-0 ${COLORES[m.tipo]}`}>
                       {SIGNOS[m.tipo]}{formatARS(m.monto)}
                     </p>
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button onClick={() => abrirEditar(m)}
-                        className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-violet-500/20 flex items-center justify-center
-                                   text-zinc-600 hover:text-violet-400 text-xs transition-all">
-                        ✏️
-                      </button>
-                      <button onClick={() => handleEliminar(m.id)}
-                        className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-rose-500/20 flex items-center justify-center
-                                   text-zinc-600 hover:text-rose-400 text-xs transition-all">
-                        ✕
-                      </button>
-                    </div>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleEliminar(m.id) }}
+                      className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-rose-500/20 flex items-center justify-center
+                                 text-zinc-600 hover:text-rose-400 text-xs transition-all flex-shrink-0">
+                      ✕
+                    </button>
                   </div>
                 ))}
               </div>
