@@ -52,7 +52,6 @@ const FORM_INICIAL = {
   mes: '',
   fecha_unica: '',
   hora: '09:00',
-  dias_anticipacion: 0,
 }
 
 export default function RecordatoriosPage() {
@@ -86,7 +85,6 @@ export default function RecordatoriosPage() {
       mes: rec.mes != null ? String(rec.mes) : '',
       fecha_unica: rec.fecha_unica || '',
       hora: rec.hora ? rec.hora.slice(0, 5) : '09:00',
-      dias_anticipacion: rec.dias_anticipacion ?? 0,
     })
     setError('')
     setModalOpen(true)
@@ -113,7 +111,7 @@ export default function RecordatoriosPage() {
       mes: form.mes !== '' ? Number(form.mes) : null,
       fecha_unica: form.fecha_unica || null,
       hora: form.hora || '09:00',
-      dias_anticipacion: Number(form.dias_anticipacion) || 0,
+      dias_anticipacion: 0,
     }
 
     // Calcular próximo aviso
@@ -386,34 +384,15 @@ export default function RecordatoriosPage() {
             )}
 
             {/* Hora */}
-            <div>
+            <div className="overflow-hidden">
               <label className="text-xs text-zinc-500 uppercase tracking-wide">Hora del aviso</label>
               <input
                 type="time"
                 value={form.hora}
                 onChange={e => setF('hora', e.target.value)}
-                className="input-dark mt-1"
+                className="input-dark mt-1 min-w-0"
+                style={{ colorScheme: 'dark' }}
               />
-            </div>
-
-            {/* Días de anticipación */}
-            <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">
-                Anticipación: {form.dias_anticipacion} día{form.dias_anticipacion !== 1 ? 's' : ''} antes
-              </label>
-              <input
-                type="range"
-                value={form.dias_anticipacion}
-                onChange={e => setF('dias_anticipacion', Number(e.target.value))}
-                min="0"
-                max="7"
-                step="1"
-                className="w-full mt-1 accent-violet-500"
-              />
-              <div className="flex justify-between text-[10px] text-zinc-600 mt-0.5">
-                <span>0 (mismo día)</span>
-                <span>7 días antes</span>
-              </div>
             </div>
 
           </div>

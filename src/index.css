@@ -27,9 +27,10 @@
     touch-action: none;
   }
 
-  /* El input de fecha en iOS tiene un mínimo nativo que CSS no puede sobreescribir
-     sin appearance:none. Con appearance:none el date picker sigue funcionando. */
-  input[type="date"] {
+  /* Date y time inputs en iOS tienen un mínimo nativo; appearance:none lo elimina
+     sin romper el picker. */
+  input[type="date"],
+  input[type="time"] {
     -webkit-appearance: none;
     appearance: none;
     display: block;
