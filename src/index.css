@@ -22,9 +22,9 @@
     font-size: 1rem;
   }
 
-  /* Slider: permite que el dedo lo arrastre horizontalmente sin que el modal scrollee sideways */
+  /* Slider: captura todos los gestos touch (sin interferencia del scroll del contenedor) */
   input[type="range"] {
-    touch-action: pan-y;
+    touch-action: none;
   }
 
   /* El input de fecha en iOS tiene un mínimo nativo que CSS no puede sobreescribir
