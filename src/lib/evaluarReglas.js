@@ -329,29 +329,46 @@ export async function evaluarReglas(userId) {
       }
     }
 
-    // --------------------------------------------------------
-    // RECORDATORIOS MANUALES con proximo_aviso <= now
-    // --------------------------------------------------------
-    const { data: recordatoriosPendientes } = await supabase
+    // Los recordatorios manuales se procesan en procesarRecordatorios() sin cooldown
+  } catch (err) {
+    console.error('[evaluarReglas] Error:', err)
+  }
+}
+
+// ============================================================
+// procesarRecordatorios
+// Corre sin cooldown en cada apertura de la app.
+// Detecta recordatorios cuyo proximo_aviso ya pasó.
+// ============================================================
+export async function procesarRecordatorios(userId) {
+  try {
+    const { data: pendientes } = await supabase
       .from('recordatorios')
       .select('*')
       .eq('user_id', userId)
       .eq('activo', true)
-      .lte('proximo_aviso', now.toISOString())
+      .lte('proximo_aviso', new Date().toISOString())
       .not('proximo_aviso', 'is', null)
 
-    for (const rec of recordatoriosPendientes ?? []) {
+    for (const rec of pendientes ?? []) {
       const montoTxt = rec.monto_estimado ? ` (~$${Number(rec.monto_estimado).toFixed(0)})` : ''
-      await supabase.from('notificaciones').insert({
+      const notifData = {
         user_id: userId,
         tipo: 'recordatorio',
         emoji: rec.emoji || '🔔',
         titulo: rec.nombre,
         mensaje: `Recordatorio programado${montoTxt}.`,
         accion_url: '/recordatorios',
+      }
+      await supabase.from('notificaciones').insert(notifData)
+
+      enviarPush(userId, supabase, {
+        titulo: notifData.titulo,
+        mensaje: notifData.mensaje,
+        emoji: notifData.emoji,
+        url: notifData.accion_url,
       })
 
-      // Calcular próximo aviso
       const proximoAviso = calcularProximoAviso(rec)
       await supabase
         .from('recordatorios')
@@ -359,6 +376,6 @@ export async function evaluarReglas(userId) {
         .eq('id', rec.id)
     }
   } catch (err) {
-    console.error('[evaluarReglas] Error:', err)
+    console.error('[procesarRecordatorios] Error:', err)
   }
 }

@@ -3,7 +3,7 @@ import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificaciones } from '../../hooks/useNotificaciones'
-import { evaluarReglas } from '../../lib/evaluarReglas'
+import { evaluarReglas, procesarRecordatorios } from '../../lib/evaluarReglas'
 import NotifPanel from '../Notifications/NotifPanel'
 import PushPermiso from '../Notifications/PushPermiso'
 
@@ -26,13 +26,18 @@ export default function Layout() {
 
   useEffect(() => {
     if (!user) return
+
+    // Recordatorios manuales: siempre al abrir la app (sin cooldown)
+    setTimeout(() => procesarRecordatorios(user.id).then(refetchNotifs), 1000)
+
+    // Reglas automáticas: máximo cada 6 horas
     const last = localStorage.getItem('lastEvalReglas')
     const now = Date.now()
     if (!last || now - Number(last) > 6 * 60 * 60 * 1000) {
       setTimeout(() => evaluarReglas(user.id).then(() => {
         localStorage.setItem('lastEvalReglas', String(now))
         refetchNotifs()
-      }), 2000)
+      }), 3000)
     }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
