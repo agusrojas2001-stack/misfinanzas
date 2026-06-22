@@ -147,22 +147,6 @@ export default function Layout() {
             })}
           </div>
 
-          {/* Notificaciones — solo mobile */}
-          <div className="px-4 md:hidden">
-            <button
-              onClick={() => { close(); setNotifPanelOpen(true) }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 relative"
-            >
-              <span className="text-lg">🔔</span>
-              Notificaciones
-              {noLeidas > 0 && (
-                <span className="ml-auto min-w-[20px] h-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-bold text-white px-1">
-                  {noLeidas > 9 ? '9+' : noLeidas}
-                </span>
-              )}
-            </button>
-          </div>
-
           <div className="h-px bg-zinc-800 mx-4" />
 
           {/* Configuración */}
