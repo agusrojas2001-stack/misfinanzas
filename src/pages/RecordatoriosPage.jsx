@@ -4,6 +4,8 @@ import Modal from '../components/Modal'
 import { useRecordatorios } from '../hooks/useRecordatorios'
 import { useCategorias } from '../hooks/useCategorias'
 import { calcularProximoAviso } from '../lib/evaluarReglas'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 const EMOJIS_RAPIDOS = ['🔔', '💸', '🏠', '🚗', '💊', '📱', '🛒', '💡', '🎓', '💳', '🍕', '✈️', '🎬', '🐾', '💰']
 
@@ -56,8 +58,33 @@ const FORM_INICIAL = {
 }
 
 export default function RecordatoriosPage() {
+  const { user } = useAuth()
   const { recordatorios, loading, crear, actualizar, eliminar } = useRecordatorios()
   const { categorias } = useCategorias()
+  const [testEstado, setTestEstado] = useState(null) // null | 'enviando' | 'ok' | 'error'
+
+  async function testPush() {
+    setTestEstado('enviando')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: {
+          user_id: user.id,
+          titulo: 'Test de notificación',
+          mensaje: '¡Si ves esto, los pushes funcionan! 🎉',
+          emoji: '✅',
+          url: '/recordatorios',
+        }
+      })
+      if (error || data?.sent === 0) {
+        setTestEstado('error')
+      } else {
+        setTestEstado('ok')
+      }
+    } catch {
+      setTestEstado('error')
+    }
+    setTimeout(() => setTestEstado(null), 4000)
+  }
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editando, setEditando] = useState(null) // recordatorio en edición o null para crear
@@ -150,12 +177,22 @@ export default function RecordatoriosPage() {
       <Header title="Recordatorios 🔔" subtitle="Avisá sobre pagos y gastos recurrentes" />
 
       {/* Botón nuevo */}
-      <button
-        onClick={abrirCrear}
-        className="btn-primary w-full"
-      >
+      <button onClick={abrirCrear} className="btn-primary w-full">
         + Nuevo recordatorio
       </button>
+
+      {/* Test de push — para verificar que las notificaciones llegan */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={testPush}
+          disabled={testEstado === 'enviando'}
+          className="btn-secondary py-2 text-sm flex-1 disabled:opacity-50"
+        >
+          {testEstado === 'enviando' ? 'Enviando...' : '🔔 Probar notificación push'}
+        </button>
+        {testEstado === 'ok'    && <span className="text-emerald-400 text-sm font-medium shrink-0">✓ Enviado</span>}
+        {testEstado === 'error' && <span className="text-rose-400 text-sm font-medium shrink-0">✗ Sin suscripción</span>}
+      </div>
 
       {loading ? (
         <div className="text-center py-10 text-zinc-500 text-sm">Cargando...</div>
