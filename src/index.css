@@ -22,6 +22,11 @@
     font-size: 1rem;
   }
 
+  /* Slider: permite que el dedo lo arrastre horizontalmente sin que el modal scrollee sideways */
+  input[type="range"] {
+    touch-action: pan-y;
+  }
+
   /* El input de fecha en iOS tiene un mínimo nativo que CSS no puede sobreescribir
      sin appearance:none. Con appearance:none el date picker sigue funcionando. */
   input[type="date"] {

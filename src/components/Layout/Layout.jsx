@@ -142,6 +142,22 @@ export default function Layout() {
             })}
           </div>
 
+          {/* Notificaciones — solo mobile */}
+          <div className="px-4 md:hidden">
+            <button
+              onClick={() => { close(); setNotifPanelOpen(true) }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 relative"
+            >
+              <span className="text-lg">🔔</span>
+              Notificaciones
+              {noLeidas > 0 && (
+                <span className="ml-auto min-w-[20px] h-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-bold text-white px-1">
+                  {noLeidas > 9 ? '9+' : noLeidas}
+                </span>
+              )}
+            </button>
+          </div>
+
           <div className="h-px bg-zinc-800 mx-4" />
 
           {/* Configuración */}
@@ -198,10 +214,10 @@ export default function Layout() {
             <img src="/favicon.svg" alt="Mis Numeritos" className="w-7 h-7 rounded-lg" />
             <span className="text-sm font-bold text-violet-400">Mis Numeritos</span>
           </button>
-          {/* Campana de notificaciones */}
+          {/* Campana de notificaciones — solo en desktop */}
           <button
             onClick={() => setNotifPanelOpen(true)}
-            className="w-9 h-9 rounded-xl hover:bg-zinc-800 flex items-center justify-center
+            className="hidden md:flex w-9 h-9 rounded-xl hover:bg-zinc-800 items-center justify-center
                        text-zinc-400 hover:text-zinc-200 transition-all active:scale-95 relative"
           >
             <span className="text-lg">🔔</span>
