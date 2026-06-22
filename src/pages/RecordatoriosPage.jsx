@@ -4,9 +4,6 @@ import Modal from '../components/Modal'
 import { useRecordatorios } from '../hooks/useRecordatorios'
 import { useCategorias } from '../hooks/useCategorias'
 import { calcularProximoAviso } from '../lib/evaluarReglas'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
-import { suscribirPush, getEstadoPermiso } from '../lib/pushService'
 
 const EMOJIS_RAPIDOS = ['🔔', '💸', '🏠', '🚗', '💊', '📱', '🛒', '💡', '🎓', '💳', '🍕', '✈️', '🎬', '🐾', '💰']
 
@@ -59,54 +56,8 @@ const FORM_INICIAL = {
 }
 
 export default function RecordatoriosPage() {
-  const { user } = useAuth()
   const { recordatorios, loading, crear, actualizar, eliminar } = useRecordatorios()
   const { categorias } = useCategorias()
-  const [testEstado, setTestEstado]   = useState(null) // null | 'enviando' | 'ok' | 'error'
-  const [activarEstado, setActivar]   = useState(null) // null | 'activando' | 'ok' | 'error' | 'denegado'
-
-  async function activarPush() {
-    setActivar('activando')
-    try {
-      const permiso = getEstadoPermiso()
-      if (permiso === 'denied') { setActivar('denegado'); setTimeout(() => setActivar(null), 4000); return }
-
-      if (permiso !== 'granted') {
-        const resultado = await Notification.requestPermission()
-        if (resultado !== 'granted') { setActivar('denegado'); setTimeout(() => setActivar(null), 4000); return }
-      }
-
-      const sub = await suscribirPush(user.id, supabase)
-      localStorage.setItem('pushDecision', 'granted')
-      setActivar(sub ? 'ok' : 'error')
-    } catch {
-      setActivar('error')
-    }
-    setTimeout(() => setActivar(null), 4000)
-  }
-
-  async function testPush() {
-    setTestEstado('enviando')
-    try {
-      const { data, error } = await supabase.functions.invoke('send-push', {
-        body: {
-          user_id: user.id,
-          titulo: 'Test de notificación',
-          mensaje: '¡Si ves esto, los pushes funcionan! 🎉',
-          emoji: '✅',
-          url: '/recordatorios',
-        }
-      })
-      if (error || data?.sent === 0) {
-        setTestEstado('error')
-      } else {
-        setTestEstado('ok')
-      }
-    } catch {
-      setTestEstado('error')
-    }
-    setTimeout(() => setTestEstado(null), 4000)
-  }
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editando, setEditando] = useState(null) // recordatorio en edición o null para crear
@@ -203,32 +154,6 @@ export default function RecordatoriosPage() {
         + Nuevo recordatorio
       </button>
 
-      {/* Botones de push */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={activarPush}
-            disabled={activarEstado === 'activando'}
-            className="btn-primary py-2 text-sm flex-1 disabled:opacity-50"
-          >
-            {activarEstado === 'activando' ? 'Activando...' : '🔔 Activar notificaciones'}
-          </button>
-          {activarEstado === 'ok'       && <span className="text-emerald-400 text-sm font-medium shrink-0">✓ Listo</span>}
-          {activarEstado === 'error'    && <span className="text-rose-400 text-sm font-medium shrink-0">✗ Error</span>}
-          {activarEstado === 'denegado' && <span className="text-amber-400 text-sm font-medium shrink-0">Permiso denegado</span>}
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={testPush}
-            disabled={testEstado === 'enviando'}
-            className="btn-secondary py-2 text-sm flex-1 disabled:opacity-50"
-          >
-            {testEstado === 'enviando' ? 'Enviando...' : '📨 Probar notificación'}
-          </button>
-          {testEstado === 'ok'    && <span className="text-emerald-400 text-sm font-medium shrink-0">✓ Enviado</span>}
-          {testEstado === 'error' && <span className="text-rose-400 text-sm font-medium shrink-0">✗ Sin suscripción</span>}
-        </div>
-      </div>
 
       {loading ? (
         <div className="text-center py-10 text-zinc-500 text-sm">Cargando...</div>
