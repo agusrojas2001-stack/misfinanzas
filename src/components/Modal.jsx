@@ -1,6 +1,14 @@
+import { useEffect } from 'react'
+
 export default function Modal({ titulo, onClose, actions, children }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pt-4 pb-20
+                    bg-black/60 backdrop-blur-sm"
          onClick={onClose}>
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl
                       flex flex-col max-h-[80vh] touch-pan-y"

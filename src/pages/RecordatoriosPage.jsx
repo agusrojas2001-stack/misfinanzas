@@ -344,7 +344,15 @@ export default function RecordatoriosPage() {
                 <input
                   type="number"
                   value={form.dia}
-                  onChange={e => setF('dia', e.target.value)}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '')
+                    if (raw === '') { setF('dia', ''); return }
+                    setF('dia', String(Math.min(31, parseInt(raw))))
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(form.dia) || 1
+                    setF('dia', String(Math.max(1, Math.min(31, n))))
+                  }}
                   min="1"
                   max="31"
                   placeholder="15"
@@ -360,7 +368,15 @@ export default function RecordatoriosPage() {
                   <input
                     type="number"
                     value={form.dia}
-                    onChange={e => setF('dia', e.target.value)}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, '')
+                      if (raw === '') { setF('dia', ''); return }
+                      setF('dia', String(Math.min(31, parseInt(raw))))
+                    }}
+                    onBlur={() => {
+                      const n = parseInt(form.dia) || 1
+                      setF('dia', String(Math.max(1, Math.min(31, n))))
+                    }}
                     min="1"
                     max="31"
                     placeholder="1"
