@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
@@ -21,6 +21,9 @@ export default function Layout() {
   const { user, perfil, signOut } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
+  const [dragX, setDragX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const touchStart = useRef(null)
 
   const { notificaciones, noLeidas, marcarLeida, marcarTodasLeidas, eliminar: eliminarNotif, refetch: refetchNotifs } = useNotificaciones()
 
@@ -49,7 +52,33 @@ export default function Layout() {
 
   const isChatbot = pathname === '/chatbot'
 
-  function close() { setDrawerOpen(false) }
+  function close() {
+    setDrawerOpen(false)
+    setDragX(0)
+    setIsDragging(false)
+  }
+
+  function onDrawerTouchStart(e) {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    setIsDragging(false)
+    setDragX(0)
+  }
+
+  function onDrawerTouchMove(e) {
+    if (!touchStart.current) return
+    const dx = e.touches[0].clientX - touchStart.current.x
+    const dy = Math.abs(e.touches[0].clientY - touchStart.current.y)
+    if (dx > 8 && dx > dy) {
+      setIsDragging(true)
+      setDragX(dx)
+    }
+  }
+
+  function onDrawerTouchEnd() {
+    if (dragX > 100) close()
+    else { setDragX(0); setIsDragging(false) }
+    touchStart.current = null
+  }
 
   function navTo(path) {
     close()
@@ -94,9 +123,17 @@ export default function Layout() {
       />
 
       {/* Drawer derecho */}
-      <div className={`fixed top-0 right-0 h-full w-72 z-50 bg-zinc-900 border-l border-zinc-800
-                       flex flex-col transform transition-transform duration-300 ease-out safe-top
-                       ${drawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div
+        className="fixed top-0 right-0 h-full w-72 z-50 bg-zinc-900 border-l border-zinc-800
+                   flex flex-col safe-top"
+        style={{
+          transform: drawerOpen ? `translateX(${dragX}px)` : 'translateX(100%)',
+          transition: isDragging ? 'none' : 'transform 300ms ease-out',
+        }}
+        onTouchStart={onDrawerTouchStart}
+        onTouchMove={onDrawerTouchMove}
+        onTouchEnd={onDrawerTouchEnd}
+      >
 
         {/* Drawer header */}
         <div className="flex items-center justify-between px-5 h-14 border-b border-zinc-800 shrink-0">
@@ -194,7 +231,8 @@ export default function Layout() {
         </div>
 
         {/* Footer drawer */}
-        <div className="px-5 py-3 border-t border-zinc-800 shrink-0 safe-bottom">
+        <div className="px-5 pt-3 border-t border-zinc-800 shrink-0"
+             style={{ paddingBottom: 'calc(0.75rem + 4rem + env(safe-area-inset-bottom, 0px))' }}>
           <p className="text-xs text-zinc-700 text-center">Mis Numeritos v0.1.0</p>
         </div>
       </div>
