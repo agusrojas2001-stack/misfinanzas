@@ -36,9 +36,7 @@ serve(async (req) => {
     let processed = 0
 
     for (const rec of pendientes ?? []) {
-      const montoTxt = rec.monto_estimado
-        ? ` (~$${Number(rec.monto_estimado).toFixed(0)})`
-        : ''
+      const mensaje = mensajeRecordatorio(rec.nombre, rec.monto_estimado)
 
       // Insertar notificación in-app
       await supabase.from('notificaciones').insert({
@@ -46,7 +44,7 @@ serve(async (req) => {
         tipo: 'recordatorio',
         emoji: rec.emoji || '🔔',
         titulo: rec.nombre,
-        mensaje: `Recordatorio programado${montoTxt}.`,
+        mensaje,
         accion_url: '/recordatorios',
       })
 
@@ -63,7 +61,7 @@ serve(async (req) => {
             { endpoint: sub.endpoint, keys: sub.keys },
             JSON.stringify({
               title: rec.nombre,
-              message: `Recordatorio programado${montoTxt}.`,
+              message: mensaje,
               emoji: rec.emoji || '🔔',
               url: '/recordatorios',
             })
@@ -97,6 +95,26 @@ serve(async (req) => {
     })
   }
 })
+
+function mensajeRecordatorio(nombre: string, monto: number | null): string {
+  if (monto) {
+    const fmt = `$${Number(monto).toLocaleString('es-AR')}`
+    const opts = [
+      `Acordate de pagar ${fmt} hoy 💳`,
+      `Hoy toca pagar ${fmt} — ¡no se te pase! ⏰`,
+      `Vencimiento de hoy: ${fmt}. Ya sabés 😉`,
+      `Tenés que pagar ${fmt} hoy 📅`,
+    ]
+    return opts[Math.floor(Math.random() * opts.length)]
+  }
+  const opts = [
+    `Acordate de esto hoy 🗓️`,
+    `¡Hoy toca! No se te pase 📋`,
+    `Lo agendaste para hoy, ¡a no olvidarlo! 😊`,
+    `Recordatorio de hoy: ¡dale que podés! 💪`,
+  ]
+  return opts[Math.floor(Math.random() * opts.length)]
+}
 
 function calcularProximoAviso(rec: any): string | null {
   const now = new Date()

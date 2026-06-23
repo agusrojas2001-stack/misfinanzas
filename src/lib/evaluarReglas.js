@@ -31,46 +31,33 @@ export function calcularProximoAviso(rec) {
     }
 
     case 'semanal': {
-      // rec.dia = 0 (Dom) ... 6 (Sáb)
       const targetDay = rec.dia ?? 1
       const candidate = new Date(now)
       const diff = (targetDay - candidate.getDay() + 7) % 7
       candidate.setDate(candidate.getDate() + (diff === 0 ? 7 : diff))
-      setHora(candidate)
-      const aviso = restarDias(candidate, rec.dias_anticipacion)
+      let aviso = setHora(candidate)
       if (aviso <= now) {
-        // Siguiente semana
         candidate.setDate(candidate.getDate() + 7)
-        return restarDias(candidate, rec.dias_anticipacion).toISOString()
+        aviso = setHora(candidate)
       }
       return aviso.toISOString()
     }
 
     case 'mensual': {
       const diaObjetivo = rec.dia ?? 1
-      const candidate = new Date(now.getFullYear(), now.getMonth(), diaObjetivo)
-      setHora(candidate)
-      let aviso = restarDias(candidate, rec.dias_anticipacion)
+      let aviso = setHora(new Date(now.getFullYear(), now.getMonth(), diaObjetivo))
       if (aviso <= now) {
-        // Próximo mes
-        const next = new Date(now.getFullYear(), now.getMonth() + 1, diaObjetivo)
-        setHora(next)
-        aviso = restarDias(next, rec.dias_anticipacion)
+        aviso = setHora(new Date(now.getFullYear(), now.getMonth() + 1, diaObjetivo))
       }
       return aviso.toISOString()
     }
 
     case 'anual': {
       const diaObjetivo = rec.dia ?? 1
-      const mesObjetivo = (rec.mes ?? 1) - 1 // 0-indexed
-      const candidate = new Date(now.getFullYear(), mesObjetivo, diaObjetivo)
-      setHora(candidate)
-      let aviso = restarDias(candidate, rec.dias_anticipacion)
+      const mesObjetivo = (rec.mes ?? 1) - 1
+      let aviso = setHora(new Date(now.getFullYear(), mesObjetivo, diaObjetivo))
       if (aviso <= now) {
-        // Próximo año
-        const next = new Date(now.getFullYear() + 1, mesObjetivo, diaObjetivo)
-        setHora(next)
-        aviso = restarDias(next, rec.dias_anticipacion)
+        aviso = setHora(new Date(now.getFullYear() + 1, mesObjetivo, diaObjetivo))
       }
       return aviso.toISOString()
     }
@@ -340,6 +327,26 @@ export async function evaluarReglas(userId) {
 // Corre sin cooldown en cada apertura de la app.
 // Detecta recordatorios cuyo proximo_aviso ya pasó.
 // ============================================================
+function mensajeRecordatorio(nombre, monto) {
+  if (monto) {
+    const fmt = `$${Number(monto).toLocaleString('es-AR')}`
+    const opts = [
+      `Acordate de pagar ${fmt} hoy 💳`,
+      `Hoy toca pagar ${fmt} — ¡no se te pase! ⏰`,
+      `Vencimiento de hoy: ${fmt}. Ya sabés 😉`,
+      `Tenés que pagar ${fmt} hoy 📅`,
+    ]
+    return opts[Math.floor(Math.random() * opts.length)]
+  }
+  const opts = [
+    `Acordate de esto hoy 🗓️`,
+    `¡Hoy toca! No se te pase 📋`,
+    `Lo agendaste para hoy, ¡a no olvidarlo! 😊`,
+    `Recordatorio de hoy: ¡dale que podés! 💪`,
+  ]
+  return opts[Math.floor(Math.random() * opts.length)]
+}
+
 export async function procesarRecordatorios(userId) {
   try {
     const { data: pendientes } = await supabase
@@ -351,13 +358,12 @@ export async function procesarRecordatorios(userId) {
       .not('proximo_aviso', 'is', null)
 
     for (const rec of pendientes ?? []) {
-      const montoTxt = rec.monto_estimado ? ` (~$${Number(rec.monto_estimado).toFixed(0)})` : ''
       const notifData = {
         user_id: userId,
         tipo: 'recordatorio',
         emoji: rec.emoji || '🔔',
         titulo: rec.nombre,
-        mensaje: `Recordatorio programado${montoTxt}.`,
+        mensaje: mensajeRecordatorio(rec.nombre, rec.monto_estimado),
         accion_url: '/recordatorios',
       }
       await supabase.from('notificaciones').insert(notifData)
