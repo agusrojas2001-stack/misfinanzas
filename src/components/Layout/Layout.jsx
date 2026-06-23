@@ -41,6 +41,12 @@ export default function Layout() {
     }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Bloquea scroll del fondo cuando un drawer está abierto
+  useEffect(() => {
+    document.body.style.overflow = (drawerOpen || notifPanelOpen) ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [drawerOpen, notifPanelOpen])
+
   const isChatbot = pathname === '/chatbot'
 
   function close() { setDrawerOpen(false) }
