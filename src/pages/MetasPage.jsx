@@ -99,7 +99,11 @@ export default function MetasPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {metas.map(meta => {
+          {[...metas].sort((a, b) => {
+            const aL = (a.movimientos ?? []).reduce((s, m) => s + m.monto, 0) >= a.monto_objetivo
+            const bL = (b.movimientos ?? []).reduce((s, m) => s + m.monto, 0) >= b.monto_objetivo
+            return aL === bL ? 0 : aL ? -1 : 1
+          }).map(meta => {
             const montoActual = (meta.movimientos ?? []).reduce((s, m) => s + m.monto, 0)
             const pct     = Math.min(100, Math.round((montoActual / meta.monto_objetivo) * 100))
             const falta   = Math.max(meta.monto_objetivo - montoActual, 0)
@@ -108,19 +112,33 @@ export default function MetasPage() {
             const porMes  = (meses && falta > 0) ? Math.ceil(falta / meses) : null
 
             return (
-              <div key={meta.id} className="card space-y-3">
+              <div key={meta.id} className="card space-y-3"
+                style={lograda ? {
+                  background: 'rgba(245,200,75,.07)',
+                  border: '1px solid rgba(245,200,75,.35)',
+                  borderRadius: '18px',
+                } : {}}>
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-2xl flex-shrink-0">
-                    {meta.emoji}
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                       style={lograda
+                         ? { background: 'rgba(245,200,75,.15)' }
+                         : { background: '#27272a' }}>
+                    {lograda
+                      ? <img src="/monedita/monedita-celebrando.svg" alt="¡Meta lograda!" className="w-9 h-9 object-contain" />
+                      : <span className="text-2xl">{meta.emoji}</span>
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-zinc-100 leading-tight">{meta.nombre}</p>
-                    {meta.fecha_objetivo && (
+                    {lograda && (
+                      <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--mn-gold)' }}>¡La rompiste! Meta cumplida</p>
+                    )}
+                    {!lograda && meta.fecha_objetivo && (
                       <p className="text-xs text-zinc-500 mt-0.5">Objetivo: {fechaLabel(meta.fecha_objetivo)}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className={`text-base font-bold ${lograda ? 'text-emerald-400' : 'text-violet-400'}`}>
+                    <span className={`text-base font-num ${lograda ? 'text-income' : 'text-violet-400'}`}>
                       {pct}%
                     </span>
                     <button onClick={() => abrirEditar(meta)}
@@ -163,8 +181,9 @@ export default function MetasPage() {
                 )}
 
                 {lograda && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 text-center">
-                    <span className="text-sm text-emerald-400 font-semibold">¡Alcanzaste tu meta! 🎉</span>
+                  <div className="rounded-xl px-3 py-2 text-center"
+                       style={{ background: 'rgba(245,200,75,.12)', border: '1px solid rgba(245,200,75,.25)' }}>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--mn-gold)' }}>¡Alcanzaste tu meta! 🎉</span>
                   </div>
                 )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
-import { Bell, Menu } from 'lucide-react'
+import { Bell, Menu, Home, MessageCircle, Target, Wallet, TrendingUp, User, LogOut } from 'lucide-react'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificaciones } from '../../hooks/useNotificaciones'
@@ -9,11 +9,11 @@ import NotifPanel from '../Notifications/NotifPanel'
 import PushPermiso from '../Notifications/PushPermiso'
 
 const NAV_ITEMS = [
-  { path: '/',            label: 'Inicio',      emoji: '🏠' },
-  { path: '/chatbot',     label: 'Monedita',    emoji: '💬' },
-  { path: '/metas',       label: 'Metas',       emoji: '🎯' },
-  { path: '/presupuesto', label: 'Presupuesto', emoji: '📊' },
-  { path: '/analisis',    label: 'Análisis',    emoji: '📈' },
+  { path: '/',            label: 'Inicio',      Icon: Home          },
+  { path: '/chatbot',     label: 'Monedita',    Icon: MessageCircle },
+  { path: '/metas',       label: 'Metas',       Icon: Target        },
+  { path: '/presupuesto', label: 'Presupuesto', Icon: Wallet        },
+  { path: '/analisis',    label: 'Análisis',    Icon: TrendingUp    },
 ]
 
 export default function Layout() {
@@ -151,8 +151,8 @@ export default function Layout() {
         <div className="px-5 py-4 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-violet-700
-                            flex items-center justify-center text-lg shrink-0">
-              👤
+                            flex items-center justify-center shrink-0">
+              <User size={20} strokeWidth={1.8} className="text-violet-200" />
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-zinc-200 text-sm truncate">
@@ -184,7 +184,7 @@ export default function Layout() {
                       ? 'bg-violet-600/20 text-violet-400 font-medium'
                       : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
                 >
-                  <span className="text-lg">{item.emoji}</span>
+                  <item.Icon size={18} strokeWidth={active ? 2.5 : 1.8} />
                   {item.label}
                 </button>
               )
@@ -208,13 +208,13 @@ export default function Layout() {
               onClick={() => navTo('/recordatorios')}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
             >
-              <span className="text-lg">🔔</span> Recordatorios
+              <Bell size={18} strokeWidth={1.8} /> Recordatorios
             </button>
             <button
               onClick={() => navTo('/perfil')}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
             >
-              <span className="text-lg">👤</span> Editar perfil
+              <User size={18} strokeWidth={1.8} /> Editar perfil
             </button>
           </div>
 
@@ -226,7 +226,7 @@ export default function Layout() {
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-rose-400 hover:bg-rose-500/10"
             >
-              <span className="text-lg">🚪</span> Cerrar sesión
+              <LogOut size={18} strokeWidth={1.8} /> Cerrar sesión
             </button>
           </div>
         </div>

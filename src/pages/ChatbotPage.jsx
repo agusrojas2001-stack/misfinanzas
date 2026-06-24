@@ -238,12 +238,18 @@ export default function ChatbotPage() {
   return (
     <div className="page-enter flex flex-col flex-1 min-h-0">
       {/* Header — fijo arriba */}
-      <div className="px-4 md:px-6 pt-4 pb-3 border-b border-zinc-800 flex-shrink-0">
+      <div className="px-4 md:px-6 pt-4 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid #1f1f23' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-violet-600 flex items-center justify-center text-xl">🪙</div>
+          <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0"
+               style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.25)' }}>
+            <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
+          </div>
           <div>
             <h1 className="font-bold text-zinc-100 leading-tight">Monedita</h1>
-            <p className="text-xs text-zinc-500">Tu asistente financiero</p>
+            <p className="text-xs flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--mn-income)' }} />
+              <span style={{ color: 'var(--mn-income)' }}>en línea</span>
+            </p>
           </div>
         </div>
       </div>
@@ -253,15 +259,21 @@ export default function ChatbotPage() {
         {mensajes.map(m => (
           <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.from === 'bot' && (
-              <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-auto">
-                🪙
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-auto"
+                   style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.2)' }}>
+                <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
               </div>
             )}
             {m.tipo === 'texto' && (
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line
+              <div className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-line
                 ${m.from === 'user'
-                  ? 'bg-violet-600 text-white rounded-br-sm'
-                  : 'bg-zinc-800 text-zinc-200 rounded-bl-sm border border-zinc-700'}`}>
+                  ? 'text-white'
+                  : 'text-zinc-200'}`}
+                style={m.from === 'user'
+                  ? { background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', borderRadius: '18px 18px 4px 18px' }
+                  : { background: '#1c1c20', border: '1px solid #27272a', borderRadius: '18px 18px 18px 4px' }
+                }
+              >
                 {m.text}
               </div>
             )}
@@ -301,21 +313,29 @@ export default function ChatbotPage() {
         </div>
         {/* Input */}
         <div className="px-4 pb-3">
-          <form onSubmit={handleSend} className="flex gap-2">
+          <form onSubmit={handleSend} className="flex items-center gap-2">
             <input
               type="text"
               placeholder="gasté 3500 en uber..."
               value={input}
               onChange={e => setInput(e.target.value)}
-              className="input-dark flex-1"
+              className="flex-1 text-zinc-100 placeholder-zinc-500 outline-none text-sm"
+              style={{
+                background: '#161619',
+                border: '1px solid #27272a',
+                borderRadius: '24px',
+                padding: '10px 16px',
+              }}
               autoComplete="off"
             />
             <button
               type="submit"
               disabled={!input.trim() || guardando}
-              className="bg-violet-600 hover:bg-violet-500 active:bg-violet-700 disabled:opacity-40
-                         text-white rounded-xl px-4 transition-all duration-150 flex-shrink-0 text-lg">
-              ➤
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                         transition-all active:scale-90 disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' }}
+            >
+              <span className="text-white text-sm">➤</span>
             </button>
           </form>
         </div>

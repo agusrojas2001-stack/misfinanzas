@@ -86,7 +86,7 @@ function SaldoCard({ label, monto, cantidad, color, emoji }) {
         <span className="text-base">{emoji}</span>
         <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide truncate">{label}</span>
       </div>
-      <p className={`text-xs font-bold ${color} leading-tight truncate`}>{formatARS(monto)}</p>
+      <p className={`text-xs font-num ${color} leading-tight truncate`}>{formatARS(monto)}</p>
       <p className="text-xs text-zinc-600 mt-1">{cantidad} mov.</p>
     </div>
   )
@@ -291,8 +291,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-zinc-500 text-sm">{saludo},</p>
-          <h1 className="text-2xl font-bold text-zinc-100">{nombre} 👋</h1>
+          <p className="text-sm" style={{ color: 'var(--mn-text-2)' }}>{saludo},</p>
+          <h1 className="text-2xl font-black text-zinc-100">{nombre} 👋</h1>
         </div>
         <DolarBadge />
       </div>
@@ -340,6 +340,26 @@ export default function DashboardPage() {
               <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400"  emoji="🏦" />
             </div>
           </div>
+
+          {/* Monedita insight card */}
+          {!loading && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[18px]"
+                 style={{ background: 'rgba(245,200,75,.07)', border: '1px solid rgba(245,200,75,.22)' }}>
+              <img src="/monedita/monedita-contenta.svg" alt="Monedita"
+                   className="w-9 h-9 flex-shrink-0 object-contain" />
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--mn-text-2)' }}>
+                {totalGastos === 0
+                  ? 'Todavía no registraste gastos este mes. ¡Empezá para llevar el control!'
+                  : balance < 0
+                    ? 'Los gastos superaron los ingresos este mes. ¡A recuperar terreno!'
+                    : pctAhorro >= 20
+                      ? `¡Un crack! Ahorraste el ${pctAhorro}% de tus ingresos este mes 🌟`
+                      : pctAhorro > 0
+                        ? `Ahorraste el ${pctAhorro}% de tus ingresos. ¿Podés llegar al 20%?`
+                        : 'Tu balance está en positivo. Seguí controlando y va a crecer 💪'}
+              </p>
+            </div>
+          )}
 
           {/* Insights del mes */}
           {insights.length > 0 && (() => {
