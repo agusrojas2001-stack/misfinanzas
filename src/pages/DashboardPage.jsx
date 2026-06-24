@@ -321,9 +321,9 @@ export default function DashboardPage() {
         <>
           {/* Balance + tarjetas — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="card bg-gradient-to-br from-violet-900/40 to-zinc-900 border-violet-800/30">
+            <div className="card" style={{ background: 'linear-gradient(150deg,#3b2a6b,#241a47)', borderColor: 'rgba(139,92,246,.35)' }}>
               <p className="text-zinc-400 text-sm mb-1">Balance del mes</p>
-              <p className={`${balanceFontClass(balance)} font-extrabold tracking-tight ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <p className={`${balanceFontClass(balance)} font-num tracking-tight ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
                 {formatARS(balance)}
               </p>
               {totalIngresos > 0 && (

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="630" height="150" viewBox="0 0 630 150" fill="none">
+  
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde68a"></stop>
+      <stop offset=".5" stop-color="#f5c84b"></stop>
+      <stop offset="1" stop-color="#c79a3a"></stop>
+    </linearGradient>
+    <linearGradient id="goldRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef3c7"></stop>
+      <stop offset=".5" stop-color="#d9a93a"></stop>
+      <stop offset="1" stop-color="#f3d77a"></stop>
+    </linearGradient>
+    <radialGradient id="sheen" cx="36%" cy="30%" r="72%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".85"></stop>
+      <stop offset=".42" stop-color="#ffffff" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <text x="0" y="76" font-family="Nunito, sans-serif" font-weight="800" font-size="96" letter-spacing="-3.5" fill="#fafafa">Mis Numerit</text>
+  <g transform="translate(547 52)">
+    <circle cx="0" cy="0" r="30" fill="url(#gold)"></circle>
+    <circle cx="0" cy="0" r="30" fill="none" stroke="url(#goldRim)" stroke-width="3.6"></circle>
+    <circle cx="0" cy="0" r="30" fill="url(#sheen)"></circle>
+  </g>
+  <text x="578" y="76" font-family="Nunito, sans-serif" font-weight="800" font-size="96" letter-spacing="-3.5" fill="#fafafa">s</text>
+  <text x="2" y="126" font-family="Nunito, sans-serif" font-weight="700" font-size="21" letter-spacing="6" fill="#71717a">ORDENÁ · ENTENDÉ · MEJORÁ</text>
+</svg>

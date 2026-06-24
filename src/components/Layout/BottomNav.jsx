@@ -1,42 +1,47 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { Home, MessageCircle, Target, Wallet, TrendingUp } from 'lucide-react'
 
 const tabs = [
-  { to: '/',            label: 'Inicio',      emoji: '🏠' },
-  { to: '/chatbot',     label: 'Monedita',    emoji: '💬' },
-  { to: '/metas',       label: 'Metas',       emoji: '🎯' },
-  { to: '/presupuesto', label: 'Presupuesto', emoji: '📊' },
-  { to: '/analisis',    label: 'Análisis',    emoji: '📈' },
+  { to: '/',            label: 'Inicio',      Icon: Home          },
+  { to: '/chatbot',     label: 'Monedita',    Icon: MessageCircle },
+  { to: '/metas',       label: 'Metas',       Icon: Target        },
+  { to: '/presupuesto', label: 'Presupuesto', Icon: Wallet        },
+  { to: '/analisis',    label: 'Análisis',    Icon: TrendingUp    },
 ]
 
 export default function BottomNav() {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+         style={{ background: 'rgba(24,24,27,0.96)', borderTop: '1px solid #1f1f23', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center justify-around h-16 max-w-4xl mx-auto px-2">
-        {tabs.map((tab) => {
-          const isActive = tab.to === '/'
+        {tabs.map(({ to, label, Icon }) => {
+          const isActive = to === '/'
             ? location.pathname === '/'
-            : location.pathname.startsWith(tab.to)
+            : location.pathname.startsWith(to)
 
           return (
             <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.to === '/'}
-              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl
+              key={to}
+              to={to}
+              end={to === '/'}
+              className="flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-xl
                          transition-all duration-200 active:scale-95"
             >
-              <span className={`text-2xl transition-all duration-200 ${isActive ? 'scale-110' : ''}`}>
-                {tab.emoji}
-              </span>
-              <span className={`text-[10px] font-medium transition-colors ${
-                isActive ? 'text-violet-400' : 'text-zinc-500'
-              }`}>
-                {tab.label}
+              <Icon
+                size={22}
+                strokeWidth={isActive ? 2.5 : 1.8}
+                color={isActive ? '#a78bfa' : '#52525b'}
+                className="transition-all duration-200"
+              />
+              <span className="text-[10px] font-semibold transition-colors"
+                    style={{ color: isActive ? '#a78bfa' : '#52525b' }}>
+                {label}
               </span>
               {isActive && (
-                <span className="w-1 h-1 rounded-full bg-violet-400 mt-0.5" />
+                <span className="w-1 h-1 rounded-full mt-0.5"
+                      style={{ background: '#a78bfa' }} />
               )}
             </NavLink>
           )

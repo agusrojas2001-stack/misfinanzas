@@ -1,72 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#2e1065"/>
-      <stop offset="100%" stop-color="#0f0720"/>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"></stop>
+      <stop offset="1" stop-color="#6d28d9"></stop>
     </linearGradient>
-    <linearGradient id="coinFill" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1c0c3f"/>
-      <stop offset="100%" stop-color="#0d0618"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde68a"></stop>
+      <stop offset=".5" stop-color="#f5c84b"></stop>
+      <stop offset="1" stop-color="#c79a3a"></stop>
     </linearGradient>
-    <clipPath id="coinClip">
-      <circle cx="256" cy="256" r="152"/>
-    </clipPath>
+    <linearGradient id="goldRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef3c7"></stop>
+      <stop offset=".5" stop-color="#d9a93a"></stop>
+      <stop offset="1" stop-color="#f3d77a"></stop>
+    </linearGradient>
+    <radialGradient id="sheen" cx="36%" cy="30%" r="72%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".85"></stop>
+      <stop offset=".42" stop-color="#ffffff" stop-opacity="0"></stop>
+    </radialGradient>
   </defs>
-
-  <!-- Fondo redondeado -->
-  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
-
-  <!-- Anillo exterior moneda -->
-  <circle cx="256" cy="256" r="172" fill="none" stroke="#7c3aed" stroke-width="6" opacity="0.25"/>
-
-  <!-- Fondo moneda -->
-  <circle cx="256" cy="256" r="162" fill="url(#coinFill)"/>
-
-  <!-- Anillo interior moneda -->
-  <circle cx="256" cy="256" r="162" fill="none" stroke="#7c3aed" stroke-width="8" opacity="0.7"/>
-
-  <!-- Barras del gráfico (dentro de la moneda) -->
-  <g clip-path="url(#coinClip)">
-    <!-- Línea base -->
-    <rect x="140" y="356" width="232" height="4" rx="2" fill="rgba(255,255,255,0.12)"/>
-
-    <!-- Barra 1 - gasto (rose) -->
-    <rect x="152" y="292" width="58" height="64" rx="12" fill="#f43f5e"/>
-    <rect x="158" y="298" width="14" height="20" rx="5" fill="rgba(255,255,255,0.2)"/>
-
-    <!-- Barra 2 - ahorro (violet) - más alta -->
-    <rect x="227" y="176" width="58" height="180" rx="12" fill="#8b5cf6"/>
-    <rect x="233" y="182" width="14" height="24" rx="5" fill="rgba(255,255,255,0.2)"/>
-
-    <!-- Barra 3 - ingreso (emerald) -->
-    <rect x="302" y="224" width="58" height="132" rx="12" fill="#10b981"/>
-    <rect x="308" y="230" width="14" height="22" rx="5" fill="rgba(255,255,255,0.2)"/>
+  <rect width="512" height="512" rx="120" fill="url(#violet)"></rect>
+  <g transform="translate(256 256) scale(2.8) translate(-50 -50)">
+    <circle cx="50" cy="50" r="33" fill="url(#gold)"></circle>
+    <circle cx="50" cy="50" r="33" fill="none" stroke="url(#goldRim)" stroke-width="3.4"></circle>
+    <circle cx="50" cy="50" r="25" fill="none" stroke="#ffffff" stroke-width="1.3" opacity=".5"></circle>
+    <circle cx="50" cy="50" r="33" fill="url(#sheen)"></circle>
   </g>
-
-  <!-- Línea de tendencia -->
-  <polyline
-    points="155,268 227,208 302,230 360,160"
-    fill="none"
-    stroke="rgba(255,255,255,0.55)"
-    stroke-width="7"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <polyline
-    points="340,152 360,160 352,180"
-    fill="none"
-    stroke="rgba(255,255,255,0.55)"
-    stroke-width="7"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-
-  <!-- Destello (shine) -->
-  <circle cx="172" cy="142" r="28" fill="rgba(167,139,250,0.15)"/>
-  <circle cx="172" cy="142" r="10" fill="rgba(167,139,250,0.35)"/>
-
-  <!-- Puntos decorativos -->
-  <circle cx="398" cy="118" r="6" fill="#a78bfa" opacity="0.6"/>
-  <circle cx="416" cy="104" r="3.5" fill="#a78bfa" opacity="0.35"/>
-  <circle cx="382" cy="106" r="4" fill="#a78bfa" opacity="0.45"/>
 </svg>

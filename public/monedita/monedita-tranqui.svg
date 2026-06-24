@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8f9fb"></stop>
+      <stop offset=".45" stop-color="#d0d5dc"></stop>
+      <stop offset="1" stop-color="#9aa0ab"></stop>
+    </linearGradient>
+    <linearGradient id="silverRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef0f3"></stop>
+      <stop offset=".5" stop-color="#aab0bb"></stop>
+      <stop offset="1" stop-color="#dde1e7"></stop>
+    </linearGradient>
+    <radialGradient id="sheen" cx="36%" cy="30%" r="72%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".85"></stop>
+      <stop offset=".42" stop-color="#ffffff" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="url(#silver)"></circle>
+  <circle cx="50" cy="50" r="46" fill="none" stroke="url(#silverRim)" stroke-width="4"></circle>
+  <circle cx="50" cy="50" r="37" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".55"></circle>
+  <circle cx="50" cy="50" r="46" fill="url(#sheen)"></circle>
+  <circle cx="39" cy="48" r="4.2" fill="#2b2f38"></circle>
+  <circle cx="61" cy="48" r="4.2" fill="#2b2f38"></circle>
+  <path d="M40 60 Q50 64 60 60" fill="none" stroke="#2b2f38" stroke-width="3.8" stroke-linecap="round"></path>
+</svg>

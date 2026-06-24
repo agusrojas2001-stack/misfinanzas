@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
+import { Bell, Menu } from 'lucide-react'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificaciones } from '../../hooks/useNotificaciones'
@@ -244,32 +245,35 @@ export default function Layout() {
             onClick={() => navigate('/')}
             className="flex items-center gap-2 active:opacity-70 transition-opacity"
           >
-            <img src="/favicon.svg" alt="Mis Numeritos" className="w-7 h-7 rounded-lg" />
-            <span className="text-sm font-bold text-violet-400">Mis Numeritos</span>
+            <img src="/coin-gold.svg" alt="Mis Numeritos" className="w-7 h-7" />
+            <span className="text-sm font-bold font-sans" style={{ color: '#a78bfa', letterSpacing: '-0.01em' }}>
+              Mis Numeritos
+            </span>
           </button>
-          {/* Campana de notificaciones — solo en desktop */}
-          <button
-            onClick={() => setNotifPanelOpen(true)}
-            className="hidden md:flex w-9 h-9 rounded-xl hover:bg-zinc-800 items-center justify-center
-                       text-zinc-400 hover:text-zinc-200 transition-all active:scale-95 relative"
-          >
-            <span className="text-lg">🔔</span>
-            {noLeidas > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-rose-500
-                               flex items-center justify-center text-[10px] font-bold text-white px-1">
-                {noLeidas > 9 ? '9+' : noLeidas}
-              </span>
-            )}
-          </button>
-
-          {/* Botón hamburguesa */}
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="w-9 h-9 rounded-xl hover:bg-zinc-800 flex items-center justify-center
-                       text-zinc-400 hover:text-zinc-200 transition-all active:scale-95 text-lg"
-          >
-            ☰
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Campana — solo en desktop */}
+            <button
+              onClick={() => setNotifPanelOpen(true)}
+              className="hidden md:flex w-9 h-9 rounded-xl hover:bg-zinc-800 items-center justify-center
+                         text-zinc-500 hover:text-zinc-200 transition-all active:scale-95 relative"
+            >
+              <Bell size={18} strokeWidth={1.8} />
+              {noLeidas > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-expense
+                                 flex items-center justify-center text-[10px] font-bold text-white px-1">
+                  {noLeidas > 9 ? '9+' : noLeidas}
+                </span>
+              )}
+            </button>
+            {/* Hamburguesa */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="w-9 h-9 rounded-xl hover:bg-zinc-800 flex items-center justify-center
+                         text-zinc-500 hover:text-zinc-200 transition-all active:scale-95"
+            >
+              <Menu size={20} strokeWidth={1.8} />
+            </button>
+          </div>
         </div>
       </header>
 
