@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout/Layout'
 import DashboardPage from './pages/DashboardPage'
@@ -28,20 +28,24 @@ function LoadingScreen() {
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  const location = useLocation()
   if (loading) return <LoadingScreen />
+  if (!localStorage.getItem('onboardingDone')) return <Navigate to="/onboarding" replace />
   if (!user) return <Navigate to="/login" replace />
-  if (!localStorage.getItem('onboardingDone') && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />
-  }
   return children
 }
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <LoadingScreen />
+  if (!localStorage.getItem('onboardingDone')) return <Navigate to="/onboarding" replace />
   if (user) return <Navigate to="/" replace />
   return children
+}
+
+function OnboardingRoute() {
+  const { user } = useAuth()
+  if (localStorage.getItem('onboardingDone')) return <Navigate to={user ? '/' : '/login'} replace />
+  return <OnboardingPage />
 }
 
 function AppRoutes() {
@@ -55,14 +59,7 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute>
-            <OnboardingPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/onboarding" element={<OnboardingRoute />} />
       <Route
         path="/"
         element={

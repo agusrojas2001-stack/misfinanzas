@@ -37,7 +37,7 @@ function Step1({ onNext, onSkip }) {
           <span style={{ color: '#a78bfa' }}>Mis Numeritos</span>
         </h1>
         <p className="text-zinc-400 text-base leading-relaxed">
-          Tu app de finanzas personales, simple y sin complicaciones.
+          Acá vas a ordenar tu plata, entenderla y mejorar mes a mes.
         </p>
       </div>
       <div className="w-full space-y-3 pt-2">
@@ -54,7 +54,7 @@ function Step2({ onNext }) {
   const features = [
     { emoji: '💰', title: 'Registrá en segundos', desc: 'Anotá gastos, ingresos y ahorros con frases simples o tocando un botón.' },
     { emoji: '🎯', title: 'Creá tus metas', desc: 'Poné un objetivo de ahorro y seguí tu progreso mes a mes.' },
-    { emoji: '📊', title: 'Entendé tus finanzas', desc: 'Gráficos, análisis y alertas para que nunca te agarre de sorpresa.' },
+    { emoji: '📊', title: 'Entendé en qué se va tu plata', desc: 'Gráficos, análisis y alertas para que tu plata nunca te agarre de sorpresa.' },
   ]
   return (
     <div className="flex flex-col gap-6 px-6 w-full">
@@ -81,7 +81,7 @@ function Step2({ onNext }) {
 
 function Step3({ onNext }) {
   const bubbles = [
-    { from: 'bot', text: '¡Hola! Soy Monedita 🪙\nRegistrá tus movimientos con frases simples.' },
+    { from: 'bot', text: 'Hola, soy Monedita. Decime qué gastaste y lo anoto por vos.' },
     { from: 'user', text: 'gasté 5000 en super' },
     { from: 'bot', text: '¡Anotado! Gasto de $5.000 en Supermercado 🛒' },
   ]
@@ -91,7 +91,7 @@ function Step3({ onNext }) {
         <img src="/monedita/monedita-contenta.svg" alt="Monedita"
              className="w-16 h-16 object-contain mx-auto mb-3" />
         <h2 className="text-2xl font-black text-zinc-100">Te presento a Monedita</h2>
-        <p className="text-zinc-400 text-sm mt-2">Tu asistente financiera. Siempre lista para ayudarte.</p>
+        <p className="text-zinc-400 text-sm mt-2">Contale lo que gastaste y ella lo anota sola.</p>
       </div>
       <div className="space-y-3 rounded-[18px] p-4" style={{ background: '#18181b', border: '1px solid #1f1f23' }}>
         {bubbles.map((b, i) => (
@@ -123,7 +123,7 @@ function Step4({ onFinish, onRegistrar }) {
       <div className="space-y-3">
         <h2 className="text-3xl font-black text-zinc-100">Listo, arranquemos</h2>
         <p className="text-zinc-400 text-base leading-relaxed">
-          Ya tenés todo para empezar. ¿Querés registrar tu primer movimiento ahora?
+          Listo, arranquemos. Cargá tu primer gasto y empezá a ver tus numeritos en orden.
         </p>
       </div>
       <div className="w-full space-y-3 pt-2">
@@ -144,16 +144,16 @@ export default function OnboardingPage() {
   const navigate = useNavigate()
   const TOTAL = 4
 
-  function finish(to = '/') {
+  function finish() {
     localStorage.setItem('onboardingDone', '1')
-    navigate(to, { replace: true })
+    navigate('/login', { replace: true })
   }
 
   const steps = [
-    <Step1 key={0} onNext={() => setStep(1)} onSkip={() => finish('/')} />,
+    <Step1 key={0} onNext={() => setStep(1)} onSkip={finish} />,
     <Step2 key={1} onNext={() => setStep(2)} />,
     <Step3 key={2} onNext={() => setStep(3)} />,
-    <Step4 key={3} onFinish={() => finish('/')} onRegistrar={() => finish('/registrar')} />,
+    <Step4 key={3} onFinish={finish} onRegistrar={finish} />,
   ]
 
   return (

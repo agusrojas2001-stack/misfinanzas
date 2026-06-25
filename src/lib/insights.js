@@ -35,17 +35,17 @@ function alertasPresupuesto(presupuestos, movimientos, mes) {
     if (totalGastado > presupGeneral.monto_max) {
       insights.push({
         tipo: 'alerta', emoji: '🚨', prioridad: 1,
-        mensaje: `Te pasaste del presupuesto mensual por ${formatARS(Math.abs(restante))}`,
+        mensaje: `Te fuiste del presupuesto del mes. Miremos juntos dónde podés aflojar.`,
       })
     } else if (pct >= 0.8 && diasRestantes > 3) {
       insights.push({
         tipo: 'warning', emoji: '⚠️', prioridad: 1,
-        mensaje: `Solo te quedan ${formatARS(restante)} del presupuesto mensual y faltan ${diasRestantes} días`,
+        mensaje: `Te queda poco margen: ${formatARS(restante)} para ${diasRestantes} días. Ojo con lo que viene.`,
       })
     } else if (pct >= 0.6 && diasRestantes > 7) {
       insights.push({
         tipo: 'warning', emoji: '⚠️', prioridad: 2,
-        mensaje: `Usaste el ${Math.round(pct * 100)}% del presupuesto mensual. Te quedan ${formatARS(restante)} para ${diasRestantes} días`,
+        mensaje: `Vas al ${Math.round(pct * 100)}% del presupuesto del mes. Te quedan ${formatARS(restante)} disponibles.`,
       })
     } else if (pct < pctMes * 0.7 && pctMes > 0.4) {
       insights.push({
@@ -64,12 +64,12 @@ function alertasPresupuesto(presupuestos, movimientos, mes) {
     if (gastado > p.monto_max) {
       insights.push({
         tipo: 'alerta', emoji: '🚨', prioridad: 1,
-        mensaje: `Te pasaste del presupuesto de ${nombre} por ${formatARS(gastado - p.monto_max)}`,
+        mensaje: `Ojo, te pasaste del límite en ${nombre} este mes. Si aflojás las próximas semanas lo emparejás.`,
       })
     } else if (pct >= 0.75 && diasRestantes > 3) {
       insights.push({
         tipo: 'warning', emoji: '⚠️', prioridad: 2,
-        mensaje: `Solo te queda ${Math.round((1 - pct) * 100)}% del presupuesto de ${nombre} y faltan ${diasRestantes} días`,
+        mensaje: `Ya usaste el 80% de lo que tenías para ${nombre} este mes. Ojo con lo que viene.`,
       })
     } else if (pct < pctMes * 0.6 && pctMes > 0.4) {
       insights.push({
@@ -99,7 +99,7 @@ function paceAhorro(totalAhorro, totalIngresos, mes) {
   if (tasa < 0.05 && pctMes > 0.3) {
     return [{
       tipo: 'info', emoji: '📊', prioridad: 5,
-      mensaje: `Ahorrás el ${Math.round(tasa * 100)}% de tus ingresos este mes. Los expertos recomiendan al menos 20%`,
+      mensaje: `Ahorrás el ${Math.round(tasa * 100)}% de tus ingresos este mes. Apuntá al 20% si podés.`,
     }]
   }
   return []
@@ -127,7 +127,7 @@ function comparacionMesAnterior(dataMeses, mes) {
   if (diff < -15) {
     return [{
       tipo: 'positivo', emoji: '📉', prioridad: 3,
-      mensaje: `Gastás ${Math.round(Math.abs(diff))}% menos que el mes pasado. ¡Buen trabajo!`,
+      mensaje: `Gastás ${Math.round(Math.abs(diff))}% menos que el mes pasado. A seguir así.`,
     }]
   }
   return []

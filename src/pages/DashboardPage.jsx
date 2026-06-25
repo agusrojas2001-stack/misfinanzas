@@ -2,17 +2,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useMovimientos } from '../hooks/useMovimientos'
-import { usePresupuesto } from '../hooks/usePresupuesto'
-import { useMetas } from '../hooks/useMetas'
 import { supabase } from '../lib/supabase'
-import { calcularInsights } from '../lib/insights'
-import InsightCard from '../components/Insights/InsightCard'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts'
 
-const COLORES_PIE = ['#8b5cf6','#10b981','#f43f5e','#f59e0b','#3b82f6','#ec4899','#14b8a6','#f97316','#a78bfa','#34d399']
+const COLORES_PIE = ['#8b5cf6','#34d399','#fb7185','#60a5fa','#f97316','#e879f9','#2dd4bf','#a78bfa','#6ee7b7','#fda4af']
 
 function TooltipARS({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -79,15 +75,12 @@ function mesActual() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
-function SaldoCard({ label, monto, cantidad, color, emoji }) {
+function SaldoCard({ label, monto, cantidad, color }) {
   return (
     <div className="card flex-1 min-w-0 overflow-hidden">
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-base">{emoji}</span>
-        <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide truncate">{label}</span>
-      </div>
-      <p className={`text-xs font-num ${color} leading-tight truncate`}>{formatARS(monto)}</p>
-      <p className="text-xs text-zinc-600 mt-1">{cantidad} mov.</p>
+      <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide truncate block mb-2">{label}</span>
+      <p className={`text-xs font-extrabold font-num ${color} leading-tight truncate`}>{formatARS(monto)}</p>
+      <p className="text-xs font-normal text-zinc-500 mt-1">{cantidad} mov.</p>
     </div>
   )
 }
@@ -137,14 +130,16 @@ function PieGastos({ movimientos }) {
 
   return (
     <div className="card">
-      <h2 className="text-sm font-semibold text-zinc-300 mb-3">Gastos por categoría</h2>
+      <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Este mes</p>
+      <h2 className="text-base font-black text-zinc-100 mb-3">Gastos por categoría</h2>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
             data={dataGastos}
             cx="50%" cy="50%"
             innerRadius={55} outerRadius={85}
-            paddingAngle={3}
+            paddingAngle={1}
+            stroke="none"
             dataKey="value"
             onClick={(_, i) => setSel(prev => prev === i ? null : i)}
           >
@@ -190,8 +185,8 @@ function PieGastos({ movimientos }) {
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ background: COLORES_PIE[i % COLORES_PIE.length] }} />
             <span className="text-xs text-zinc-400 flex-1 truncate">{cat.name}</span>
-            <span className="text-xs font-semibold text-zinc-300 flex-shrink-0">{formatCompact(cat.value)}</span>
-            <span className="text-[10px] text-zinc-600 w-8 text-right flex-shrink-0">
+            <span className="text-xs font-extrabold font-num text-zinc-300 flex-shrink-0">{formatARS(cat.value)}</span>
+            <span className="text-xs text-zinc-600 w-8 text-right flex-shrink-0">
               {Math.round((cat.value / total) * 100)}%
             </span>
           </button>
@@ -206,10 +201,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const [mes, setMes] = useState(mesActual())
   const { movimientos, loading, eliminar } = useMovimientos(mes)
-  const { presupuestos } = usePresupuesto(mes)
-  const { metas } = useMetas()
   const [dataMeses, setDataMeses] = useState([])
-  const [insightsAbiertos, setInsightsAbiertos] = useState(false)
 
   useEffect(() => {
     async function fetchUltimosMeses() {
@@ -245,11 +237,6 @@ export default function DashboardPage() {
   const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + m.monto, 0)
   const balance       = totalIngresos - totalGastos - totalAhorro
   const pctAhorro     = totalIngresos > 0 ? Math.round((totalAhorro / totalIngresos) * 100) : 0
-
-  // Insights locales
-  const insights = loading ? [] : calcularInsights({
-    movimientos, mes, presupuestos, metas, dataMeses, totalIngresos, totalAhorro
-  })
 
   // Top 3 gastos por categoría
   const topGastos = Object.values(
@@ -291,8 +278,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm" style={{ color: 'var(--mn-text-2)' }}>{saludo},</p>
-          <h1 className="text-2xl font-black text-zinc-100">{nombre} 👋</h1>
+          <p className="text-sm font-normal text-zinc-400">{saludo},</p>
+          <h1 className="text-3xl font-black text-zinc-100">{nombre} 👋</h1>
         </div>
         <DolarBadge />
       </div>
@@ -322,22 +309,22 @@ export default function DashboardPage() {
           {/* Balance + tarjetas — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="card" style={{ background: 'linear-gradient(150deg,#3b2a6b,#241a47)', borderColor: 'rgba(139,92,246,.35)' }}>
-              <p className="text-zinc-400 text-sm mb-1">Balance del mes</p>
-              <p className={`${balanceFontClass(balance)} font-num tracking-tight ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
+              <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">Balance del mes</p>
+              <p className={`${balanceFontClass(balance)} font-num font-extrabold tracking-tight ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
                 {formatARS(balance)}
               </p>
               {totalIngresos > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs text-zinc-500">Ahorro:</span>
-                  <span className="text-xs font-semibold text-violet-400">{pctAhorro}% de los ingresos</span>
+                  <span className="text-xs font-extrabold text-violet-400">{pctAhorro}% de los ingresos</span>
                 </div>
               )}
             </div>
 
             <div className="flex gap-3">
-              <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" emoji="📈" />
-              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto').length}   color="text-rose-400"    emoji="📉" />
-              <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400"  emoji="🏦" />
+              <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" />
+              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto').length}   color="text-rose-400"   />
+              <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" />
             </div>
           </div>
 
@@ -347,72 +334,33 @@ export default function DashboardPage() {
                  style={{ background: 'rgba(245,200,75,.07)', border: '1px solid rgba(245,200,75,.22)' }}>
               <img src="/monedita/monedita-contenta.svg" alt="Monedita"
                    className="w-9 h-9 flex-shrink-0 object-contain" />
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--mn-text-2)' }}>
+              <p className="text-sm font-normal text-zinc-400 leading-relaxed">
                 {totalGastos === 0
-                  ? 'Todavía no registraste gastos este mes. ¡Empezá para llevar el control!'
+                  ? 'Todavía no cargaste nada este mes. Anotá tu primer gasto y empezamos a ordenar tus números.'
                   : balance < 0
-                    ? 'Los gastos superaron los ingresos este mes. ¡A recuperar terreno!'
+                    ? 'Uff, los gastos le ganaron a los ingresos este mes. Todavía podés cerrar mejor.'
                     : pctAhorro >= 20
-                      ? `¡Un crack! Ahorraste el ${pctAhorro}% de tus ingresos este mes 🌟`
+                      ? `¡La rompiste! Ahorraste el ${pctAhorro}% de tus ingresos este mes 🌟`
                       : pctAhorro > 0
-                        ? `Ahorraste el ${pctAhorro}% de tus ingresos. ¿Podés llegar al 20%?`
-                        : 'Tu balance está en positivo. Seguí controlando y va a crecer 💪'}
+                        ? `Ahorraste el ${pctAhorro}% de tus ingresos. ¿Le metemos un poco más?`
+                        : 'Tu balance está en positivo. Seguí así y va a crecer mes a mes 💪'}
               </p>
             </div>
           )}
-
-          {/* Insights del mes */}
-          {insights.length > 0 && (() => {
-            const urgentes = insights.filter(i => i.tipo === 'alerta' || i.tipo === 'warning')
-            const resto    = insights.filter(i => i.tipo !== 'alerta' && i.tipo !== 'warning')
-            return (
-              <div className="space-y-2">
-                {/* Alertas urgentes — siempre visibles */}
-                {urgentes.map((ins, i) => (
-                  <div key={i} className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl border text-xs leading-relaxed
-                    ${ins.tipo === 'alerta'
-                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-200'
-                      : 'bg-amber-500/10 border-amber-500/30 text-amber-200'}`}>
-                    <span className="text-base flex-shrink-0">{ins.emoji}</span>
-                    <p>{ins.mensaje}</p>
-                  </div>
-                ))}
-
-                {/* Resto — colapsable */}
-                {resto.length > 0 && (
-                  <div>
-                    <button
-                      onClick={() => setInsightsAbiertos(v => !v)}
-                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200 transition-colors py-1"
-                    >
-                      <span>💡</span>
-                      <span className="font-medium">Insights del mes</span>
-                      <span className="text-xs bg-zinc-800 text-zinc-500 rounded-full px-2 py-0.5">{resto.length}</span>
-                      <span className={`text-zinc-600 transition-transform duration-200 ${insightsAbiertos ? 'rotate-180' : ''}`}>▾</span>
-                    </button>
-                    {insightsAbiertos && (
-                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 mt-2" style={{ scrollbarWidth: 'none' }}>
-                        {resto.map((ins, i) => (
-                          <InsightCard key={i} insight={ins} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
 
           {/* Top gastos + Movimientos — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topGastos.length > 0 && (
               <div className="card space-y-3">
-                <h2 className="text-sm font-semibold text-zinc-300">Top gastos del mes</h2>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Categorías</p>
+                  <h2 className="text-base font-black text-zinc-100">Top gastos del mes</h2>
+                </div>
                 {topGastos.map((g, i) => (
                   <div key={i} className="space-y-1">
                     <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-zinc-300 min-w-0 truncate">{g.emoji} {g.nombre}</span>
-                      <span className="font-semibold text-rose-400 flex-shrink-0">{formatCompact(g.total)}</span>
+                      <span className="text-sm font-extrabold text-zinc-100 min-w-0 truncate">{g.emoji} {g.nombre}</span>
+                      <span className="font-extrabold font-num text-rose-400 flex-shrink-0">{formatARS(g.total)}</span>
                     </div>
                     <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-700"
@@ -425,7 +373,7 @@ export default function DashboardPage() {
 
             <div className="card space-y-1">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-semibold text-zinc-300">Últimos movimientos</h2>
+                <h2 className="text-base font-black text-zinc-100">Últimos movimientos</h2>
                 <button onClick={() => navigate('/movimientos')}
                   className="text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors">
                   Ver todos →
@@ -435,7 +383,7 @@ export default function DashboardPage() {
                 <div className="py-8 text-center">
                   <p className="text-2xl mb-2">📭</p>
                   <p className="text-zinc-500 text-sm">Sin movimientos este mes</p>
-                  <p className="text-zinc-600 text-xs mt-1">Registrá uno desde la pestaña Registrar</p>
+                  <p className="text-zinc-600 text-xs mt-1">Cargá uno desde el botón + de abajo.</p>
                 </div>
               ) : (
                 ultimos.map((m) => {
@@ -451,12 +399,12 @@ export default function DashboardPage() {
                         </p>
                         <p className="text-xs text-zinc-500">{m.categorias?.nombre} · {fechaLabel}</p>
                       </div>
-                      <span className={`text-sm font-semibold flex-shrink-0 ${
+                      <span className={`text-sm font-extrabold font-num flex-shrink-0 ${
                         m.tipo === 'ingreso' ? 'text-emerald-400'
                         : m.tipo === 'ahorro' ? 'text-violet-400'
                         : 'text-rose-400'
                       }`}>
-                        {m.tipo === 'ingreso' ? '+' : '-'}{formatCompact(m.monto)}
+                        {m.tipo === 'ingreso' ? '+' : '-'}{formatARS(m.monto)}
                       </span>
                       <button
                         onClick={() => eliminar(m.id)}
@@ -480,15 +428,22 @@ export default function DashboardPage() {
 
             {/* Barras: últimos 6 meses */}
             <div className="card overflow-hidden">
-              <h2 className="text-sm font-semibold text-zinc-300 mb-4">Últimos 6 meses</h2>
-              <ResponsiveContainer width="100%" height={220}>
+              <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Evolución</p>
+              <h2 className="text-base font-black text-zinc-100 mb-1">Últimos 6 meses</h2>
+              {/* Leyenda */}
+              <div className="flex items-center gap-4 mb-4">
+                <span className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#34d399' }} />Ingresos</span>
+                <span className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#fb7185' }} />Gastos</span>
+                <span className="flex items-center gap-1.5 text-xs text-zinc-500"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#8b5cf6' }} />Ahorro</span>
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={dataMeses} barCategoryGap="30%" barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis dataKey="mes" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip content={<TooltipBarras />} cursor={{ fill: '#ffffff08' }} />
-                  <Bar dataKey="Ingresos" fill="#10b981" radius={[4,4,0,0]} />
-                  <Bar dataKey="Gastos"   fill="#f43f5e" radius={[4,4,0,0]} />
+                  <Bar dataKey="Ingresos" fill="#34d399" radius={[4,4,0,0]} />
+                  <Bar dataKey="Gastos"   fill="#fb7185" radius={[4,4,0,0]} />
                   <Bar dataKey="Ahorro"   fill="#8b5cf6" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>

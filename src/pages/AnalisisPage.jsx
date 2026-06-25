@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Sparkles } from 'lucide-react'
 import { useMovimientos } from '../hooks/useMovimientos'
 import { usePresupuesto } from '../hooks/usePresupuesto'
 import { useMetas } from '../hooks/useMetas'
@@ -44,29 +45,30 @@ function mesSiguiente(mes) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-const COLORES_INSIGHT = {
-  alerta:   { bg: 'bg-rose-500/10',    border: 'border-rose-500/30',    text: 'text-rose-200'    },
-  warning:  { bg: 'bg-amber-500/10',   border: 'border-amber-500/30',   text: 'text-amber-200'   },
-  positivo: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-200' },
-  info:     { bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    text: 'text-blue-200'    },
+const INSIGHT_COLORS = {
+  alerta:   { bg: 'rgba(251,113,133,.07)', border: 'rgba(251,113,133,.22)', text: '#fb7185', img: 'tranqui'  },
+  warning:  { bg: 'rgba(251,191,36,.07)',  border: 'rgba(251,191,36,.22)',  text: '#fbbf24', img: 'tranqui'  },
+  positivo: { bg: 'rgba(52,211,153,.07)',  border: 'rgba(52,211,153,.22)',  text: '#34d399', img: 'contenta' },
+  info:     { bg: 'rgba(139,92,246,.07)',  border: 'rgba(139,92,246,.22)',  text: '#a78bfa', img: 'contenta' },
 }
 
 const GRUPOS_LABEL = {
-  alerta:   '🚨 Alertas',
-  warning:  '⚠️ Advertencias',
-  positivo: '✅ Lo que va bien',
-  info:     '💡 Observaciones',
+  alerta:   'Alertas',
+  warning:  'Advertencias',
+  positivo: 'Lo que va bien',
+  info:     'Observaciones',
 }
 
 const LOADER_MSGS = [
-  'Analizando tus gastos...',
-  'Buscando patrones...',
-  'Pensando recomendaciones...',
-  'Cruzando datos con tus metas...',
-  'Armando el informe...',
+  'Analizando lo que gastaste...',
+  'Buscando qué resaltar...',
+  'Pensando qué recomendarte...',
+  'Mirando cómo van tus metas...',
+  'Armando el resumen...',
 ]
 
 export default function AnalisisPage() {
+  const [tab, setTab]                 = useState('analisis')
   const [mes, setMes]                 = useState(mesActual())
   const { movimientos, loading }      = useMovimientos(mes)
   const { presupuestos }              = usePresupuesto(mes)
@@ -74,7 +76,6 @@ export default function AnalisisPage() {
   const { reportes, guardar, usadosEnMes, puedeGenerar, LIMITE_MES } = useReportes()
   const [dataMeses, setDataMeses]     = useState([])
   const [movsPrev, setMovsPrev]       = useState([])
-  const [verMasInsights, setVerMasInsights] = useState(false)
 
   // IA state
   const [generando, setGenerando]     = useState(false)
@@ -141,7 +142,7 @@ export default function AnalisisPage() {
     } else if (del_mes.length === 0) {
       setReporteActual(null)
     }
-  }, [reportes, mes])
+  }, [reportes, mes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const esMesActual = mes === mesActual()
 
@@ -205,13 +206,13 @@ export default function AnalisisPage() {
   // ── IA helpers ─────────────────────────────────────────────────
   const usados = usadosEnMes(mes)
   const puedeGen = puedeGenerar(mes)
+  const monoExpression = balance >= 0 ? 'contenta' : 'tranqui'
 
   async function handleGenerarAnalisis() {
     setErrorIA(null)
     setGenerando(true)
     setLoaderMsg(0)
     try {
-      // Armar payload con contexto financiero del mes
       const PALABRAS_FIJO = ['gym', 'gimnasio', 'transport', 'colectivo', 'subte', 'tren', 'facultad', 'universidad', 'colegio', 'estudio',
         'suscri', 'netflix', 'spotify', 'disney', 'amazon', 'alquiler', 'servicio', 'internet', 'luz', 'gas', 'agua',
         'seguro', 'obra social', 'medicina', 'prepaga', 'cuota', 'banco', 'tarjeta fija']
@@ -266,10 +267,8 @@ export default function AnalisisPage() {
       }
 
       const texto = await generarAnalisis(payload)
-
       const { error } = await guardar({ mes, contenido: texto })
       if (error) throw new Error(error)
-
       setReporteActual({ contenido: texto, generado_at: new Date().toISOString() })
     } catch (e) {
       setErrorIA(e.message ?? 'Ocurrió un error al generar el análisis.')
@@ -283,8 +282,8 @@ export default function AnalisisPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-zinc-100">Análisis 📈</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Entendé en qué se va tu plata</p>
+        <h1 className="text-3xl font-black text-zinc-100">Análisis 📈</h1>
+        <p className="text-sm font-normal text-zinc-400 mt-0.5">Entendé en qué se va tu plata</p>
       </div>
 
       {/* Selector de mes */}
@@ -300,7 +299,7 @@ export default function AnalisisPage() {
         <div className="py-16 text-center text-zinc-500 text-sm">Cargando...</div>
       ) : (
         <>
-          {/* Resumen compacto */}
+          {/* Resumen — visible en ambas pestañas */}
           <div className="grid grid-cols-4 gap-2">
             {[
               { label: 'Ingresos', val: totalIngresos, color: 'text-emerald-400' },
@@ -309,201 +308,287 @@ export default function AnalisisPage() {
               { label: 'Balance',  val: balance,       color: balance >= 0 ? 'text-emerald-400' : 'text-rose-400' },
             ].map(({ label, val, color }) => (
               <div key={label} className="card py-3 px-2 text-center">
-                <p className="text-[10px] text-zinc-500 mb-1">{label}</p>
-                <p className={`text-xs font-bold ${color} leading-tight`}>
-                  {new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 2 }).format(val)}
+                <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">{label}</p>
+                <p className={`text-xs font-extrabold font-num ${color} leading-tight`}>
+                  {formatARS(val)}
                 </p>
               </div>
             ))}
           </div>
 
-          {/* ── Comparativa vs mes anterior ── */}
-          {comparativa.length > 0 && (
-            <div className="card space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold text-zinc-300">Comparativa vs mes anterior</h2>
-                <p className="text-xs text-zinc-600 mt-0.5">Gastos de este mes frente a {mesLabel(mesAnterior(mes))}</p>
-              </div>
-              <div className="space-y-2">
-                {comparativa.slice(0, 5).map((cat) => (
-                  <div key={cat.id} className="flex items-center gap-3">
-                    <span className="text-lg flex-shrink-0">{cat.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-zinc-300 truncate">{cat.nombre}</p>
-                      {cat.prev > 0 && (
-                        <p className="text-[10px] text-zinc-600">Anterior: {formatARS(cat.prev)}</p>
-                      )}
-                    </div>
-                    <div className="text-right flex-shrink-0 space-y-0.5">
-                      <p className="text-sm font-semibold text-rose-400">{formatARS(cat.total)}</p>
-                      {cat.diff !== null && (
-                        <p className={`text-[10px] font-medium ${cat.diff > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                          {cat.diff > 0 ? '↑' : '↓'} {Math.abs(cat.diff)}%
-                        </p>
-                      )}
-                      {cat.diff === null && (
-                        <p className="text-[10px] text-zinc-600">Nuevo</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── Distribución semanal del gasto ── */}
-          {totalGastos > 0 && (
-            <div className="card space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold text-zinc-300">¿En qué semana gastás más?</h2>
-                <p className="text-xs text-zinc-600 mt-0.5">Distribución del gasto por semana del mes</p>
-              </div>
-              <div className="space-y-2.5">
-                {semanas.map((s, i) => {
-                  const pct = maxSemana > 0 ? (s.total / maxSemana) * 100 : 0
-                  const esMayor = s.total === maxSemana && s.total > 0
-                  return (
-                    <div key={i} className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className={`${esMayor ? 'text-zinc-200 font-medium' : 'text-zinc-500'}`}>{s.label}</span>
-                        <span className={`font-semibold ${esMayor ? 'text-rose-400' : 'text-zinc-400'}`}>
-                          {s.total > 0 ? formatARS(s.total) : '—'}
-                          {esMayor && <span className="ml-1 text-[10px] text-rose-500">↑ mayor</span>}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${esMayor ? 'bg-rose-500' : 'bg-zinc-600'}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── Evolución de la tasa de ahorro ── */}
-          {dataMeses.length > 0 && (
-            <div className="card space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold text-zinc-300">Tasa de ahorro — últimos 6 meses</h2>
-                <p className="text-xs text-zinc-600 mt-0.5">Ahorro como % de los ingresos mensuales</p>
-              </div>
-              <div className="flex items-end gap-2 h-20">
-                {evolucionAhorro.map((m, i) => {
-                  const pct = maxTasa > 0 ? (m.tasa / maxTasa) * 100 : 0
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-zinc-500 font-medium">{m.tasa > 0 ? `${m.tasa}%` : ''}</span>
-                      <div className="w-full flex items-end" style={{ height: 48 }}>
-                        <div
-                          className={`w-full rounded-t-md transition-all duration-700 ${m.esActual ? 'bg-violet-500' : 'bg-zinc-700'}`}
-                          style={{ height: `${Math.max(pct, m.tasa > 0 ? 8 : 0)}%` }}
-                        />
-                      </div>
-                      <span className={`text-[10px] ${m.esActual ? 'text-violet-400 font-semibold' : 'text-zinc-600'}`}>{m.mes}</span>
-                    </div>
-                  )
-                })}
-              </div>
-              {evolucionAhorro.every(m => m.tasa === 0) && (
-                <p className="text-xs text-zinc-600 text-center">Sin datos de ahorro registrados en este período</p>
-              )}
-            </div>
-          )}
-
-          {/* ── Insights automáticos ── */}
-          {insights.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-zinc-300">💡 Insights automáticos</h2>
-              <div className="space-y-4">
-                {['alerta','warning','positivo','info'].filter(t => porTipo[t]?.length > 0).map(tipo => {
-                  const lista = porTipo[tipo]
-                  const visibles = verMasInsights ? lista : lista.slice(0, 5)
-                  return (
-                    <div key={tipo} className="space-y-2">
-                      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">{GRUPOS_LABEL[tipo]}</p>
-                      {visibles.map((ins, i) => {
-                        const s = COLORES_INSIGHT[ins.tipo]
-                        return (
-                          <div key={i} className={`flex items-start gap-2.5 px-3 py-3 rounded-xl border ${s.bg} ${s.border}`}>
-                            <span className="text-base flex-shrink-0">{ins.emoji}</span>
-                            <p className={`text-sm leading-relaxed ${s.text}`}>{ins.mensaje}</p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
-              </div>
-              {insights.length > 5 && !verMasInsights && (
-                <button onClick={() => setVerMasInsights(true)}
-                  className="w-full text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors py-1">
-                  Ver {insights.length - 5} insights más ▾
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── Análisis con IA ── */}
-          <div className="card bg-gradient-to-br from-violet-900/30 to-zinc-900 border-violet-800/30 space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-bold text-zinc-100">✨ Análisis profundo con IA</h2>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Claude analiza tus datos del mes y te da recomendaciones concretas.
-                </p>
-              </div>
-              <div className="flex-shrink-0 text-right">
-                <p className={`text-xs font-semibold ${usados >= LIMITE_MES ? 'text-rose-400' : 'text-zinc-400'}`}>
-                  {usados}/{LIMITE_MES}
-                </p>
-                <p className="text-[10px] text-zinc-600">este mes</p>
-              </div>
-            </div>
-
-            {generando ? (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
-              </div>
-            ) : (
-              <>
-                {errorIA && (
-                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-rose-300">{errorIA}</p>
-                  </div>
-                )}
-                <button
-                  onClick={handleGenerarAnalisis}
-                  disabled={!puedeGen || movimientos.length === 0}
-                  className="btn-primary py-3.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed">
-                  {usados >= LIMITE_MES
-                    ? `Límite alcanzado (${LIMITE_MES}/${LIMITE_MES} este mes)`
-                    : reporteActual
-                    ? 'Generar nuevo análisis'
-                    : 'Generar análisis del mes'}
-                </button>
-                {movimientos.length === 0 && (
-                  <p className="text-xs text-center text-zinc-600">Necesitás tener movimientos registrados para generar el análisis.</p>
-                )}
-              </>
-            )}
+          {/* Toggle de pestañas */}
+          <div className="flex gap-1 p-1 rounded-2xl" style={{ background: '#18181b', border: '1px solid #1f1f23' }}>
+            <button
+              onClick={() => setTab('analisis')}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all
+                ${tab === 'analisis' ? 'bg-violet-600 text-white shadow-violet-glow' : 'text-zinc-400 hover:text-zinc-200'}`}
+            >
+              Análisis
+            </button>
+            <button
+              onClick={() => setTab('monedita')}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all
+                ${tab === 'monedita' ? 'bg-violet-600 text-white shadow-violet-glow' : 'text-zinc-400 hover:text-zinc-200'}`}
+            >
+              Resumen de Monedita
+            </button>
           </div>
 
-          {/* Reporte del mes actual */}
-          {reporteActual && !generando && (
-            <ReporteMensual
-              contenido={reporteActual.contenido}
-              generadoAt={reporteActual.generado_at}
-              onCerrar={() => setReporteActual(null)}
-            />
+          {/* ── PESTAÑA: ANÁLISIS ─────────────────────────────────── */}
+          {tab === 'analisis' && (
+            <div className="space-y-5">
+
+              {/* Comparativa vs mes anterior */}
+              {comparativa.length > 0 && (
+                <div className="card space-y-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Por categoría</p>
+                    <h2 className="text-base font-black text-zinc-100">Comparativa vs mes anterior</h2>
+                    <p className="text-xs text-zinc-500 mt-0.5">Gastos de este mes frente a {mesLabel(mesAnterior(mes))}</p>
+                  </div>
+                  <div className="space-y-2">
+                    {comparativa.slice(0, 5).map((cat) => (
+                      <div key={cat.id} className="flex items-center gap-3">
+                        <span className="text-lg flex-shrink-0">{cat.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-extrabold text-zinc-100 truncate">{cat.nombre}</p>
+                          {cat.prev > 0 && (
+                            <p className="text-xs font-normal text-zinc-400">Anterior: {formatARS(cat.prev)}</p>
+                          )}
+                        </div>
+                        <div className="text-right flex-shrink-0 space-y-0.5">
+                          <p className="font-extrabold font-num text-rose-400">{formatARS(cat.total)}</p>
+                          {cat.diff !== null && (
+                            <p className={`text-xs font-medium ${cat.diff > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                              {cat.diff > 0 ? '↑' : '↓'} {Math.abs(cat.diff)}%
+                            </p>
+                          )}
+                          {cat.diff === null && (
+                            <p className="text-xs text-zinc-600">Nuevo</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Distribución semanal del gasto */}
+              {totalGastos > 0 && (
+                <div className="card space-y-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Distribución temporal</p>
+                    <h2 className="text-base font-black text-zinc-100">¿En qué semana gastás más?</h2>
+                  </div>
+                  <div className="space-y-2.5">
+                    {semanas.map((s, i) => {
+                      const pct = maxSemana > 0 ? (s.total / maxSemana) * 100 : 0
+                      const esMayor = s.total === maxSemana && s.total > 0
+                      return (
+                        <div key={i} className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className={`${esMayor ? 'text-zinc-200 font-medium' : 'text-zinc-500'}`}>{s.label}</span>
+                            <span className={`font-semibold ${esMayor ? 'text-rose-400' : 'text-zinc-400'}`}>
+                              {s.total > 0 ? formatARS(s.total) : '—'}
+                              {esMayor && <span className="ml-1 text-xs text-rose-500">↑ mayor</span>}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-700 ${esMayor ? 'bg-rose-500' : 'bg-zinc-600'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Evolución de la tasa de ahorro */}
+              {dataMeses.length > 0 && (
+                <div className="card space-y-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Evolución</p>
+                    <h2 className="text-base font-black text-zinc-100">Ahorro en los últimos 6 meses</h2>
+                    <p className="text-xs text-zinc-500 mt-0.5">Ahorro como % de los ingresos mensuales</p>
+                  </div>
+                  <div className="flex items-end gap-2 h-20">
+                    {evolucionAhorro.map((m, i) => {
+                      const pct = maxTasa > 0 ? (m.tasa / maxTasa) * 100 : 0
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                          <span className="text-xs text-zinc-500 font-medium">{m.tasa > 0 ? `${m.tasa}%` : ''}</span>
+                          <div className="w-full flex items-end" style={{ height: 48 }}>
+                            <div
+                              className={`w-full rounded-t-md transition-all duration-700 ${m.esActual ? 'bg-violet-500' : 'bg-zinc-700'}`}
+                              style={{ height: `${Math.max(pct, m.tasa > 0 ? 8 : 0)}%` }}
+                            />
+                          </div>
+                          <span className={`text-xs ${m.esActual ? 'text-violet-400 font-semibold' : 'text-zinc-600'}`}>{m.mes}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {evolucionAhorro.every(m => m.tasa === 0) && (
+                    <p className="text-xs text-zinc-600 text-center">Sin datos de ahorro registrados en este período</p>
+                  )}
+                </div>
+              )}
+
+            </div>
           )}
 
-          {/* Historial de meses anteriores */}
-          <HistorialReportes reportes={reportes} mesActivo={mes} />
+          {/* ── PESTAÑA: RESUMEN DE MONEDITA ─────────────────────── */}
+          {tab === 'monedita' && (
+            <div className="space-y-6">
+
+              {/* Eyebrow + título */}
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Sparkles size={14} className="text-violet-400" />
+                  <p className="text-xs font-black uppercase tracking-widest text-violet-400">
+                    El resumen de Monedita
+                  </p>
+                </div>
+                <h2 className="text-2xl font-black text-zinc-100">
+                  Cómo te fue en {mesLabel(mes)}
+                </h2>
+              </div>
+
+              {/* Insights automáticos agrupados */}
+              {insights.length > 0 ? (
+                <div className="space-y-6">
+                  {['alerta','warning','positivo','info'].filter(t => porTipo[t]?.length > 0).map(tipo => {
+                    const c = INSIGHT_COLORS[tipo]
+                    return (
+                      <div key={tipo} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={`/monedita/monedita-${c.img}.svg`}
+                            alt=""
+                            className="w-6 h-6 object-contain flex-shrink-0"
+                          />
+                          <p className="text-xs font-black uppercase tracking-widest" style={{ color: c.text }}>
+                            {GRUPOS_LABEL[tipo]}
+                          </p>
+                        </div>
+                        <div className="space-y-2.5">
+                          {porTipo[tipo].map((ins, i) => (
+                            <div
+                              key={i}
+                              className="flex items-start gap-4 rounded-[18px] px-4 py-4"
+                              style={{ background: c.bg, border: `1px solid ${c.border}` }}
+                            >
+                              <span className="text-xl flex-shrink-0 mt-0.5">{ins.emoji}</span>
+                              <p className="text-base font-semibold leading-snug" style={{ color: c.text }}>
+                                {ins.mensaje}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <img
+                    src="/monedita/monedita-tranqui.svg"
+                    alt="Monedita"
+                    className="w-16 h-16 object-contain opacity-70"
+                  />
+                  <p className="text-sm font-semibold text-zinc-500">
+                    No hay alertas ni novedades por ahora.<br />
+                    Cargá más gastos para que Monedita pueda darte un análisis completo.
+                  </p>
+                </div>
+              )}
+
+              {/* Sección IA */}
+              <div className="rounded-[18px] p-5 space-y-4"
+                   style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.25)' }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles size={13} className="text-violet-400" />
+                      <p className="text-xs font-black uppercase tracking-widest text-violet-400">Análisis IA</p>
+                    </div>
+                    <h3 className="text-base font-black text-zinc-100">
+                      Generar el Resumen de Monedita
+                    </h3>
+                    <p className="text-sm font-normal text-zinc-400 mt-1 leading-relaxed">
+                      Monedita analiza tus datos y te arma un resumen del mes.
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-sm font-black ${usados >= LIMITE_MES ? 'text-rose-400' : 'text-zinc-300'}`}>
+                      {usados}/{LIMITE_MES}
+                    </p>
+                    <p className="text-xs text-zinc-600">este mes</p>
+                  </div>
+                </div>
+
+                {generando ? (
+                  <div className="flex flex-col items-center gap-3 py-4">
+                    <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-bold text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
+                  </div>
+                ) : (
+                  <>
+                    {errorIA && (
+                      <div className="rounded-[14px] px-4 py-3"
+                           style={{ background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.22)' }}>
+                        <p className="text-sm font-semibold" style={{ color: '#fb7185' }}>{errorIA}</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleGenerarAnalisis}
+                      disabled={!puedeGen || movimientos.length === 0}
+                      className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                      {usados >= LIMITE_MES
+                        ? `Ya usaste los ${LIMITE_MES} análisis del mes`
+                        : reporteActual
+                        ? 'Generar nuevo resumen'
+                        : 'Generar el Resumen de Monedita'}
+                    </button>
+                    {movimientos.length === 0 && (
+                      <p className="text-sm font-medium text-center text-zinc-600">
+                        Cargá algunos gastos primero.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Reporte del mes actual */}
+              {reporteActual && !generando && (
+                <ReporteMensual
+                  contenido={reporteActual.contenido}
+                  generadoAt={reporteActual.generado_at}
+                  expression={monoExpression}
+                  onCerrar={() => setReporteActual(null)}
+                />
+              )}
+
+              {/* Empty state sin reporte */}
+              {!reporteActual && !generando && movimientos.length > 0 && (
+                <div className="flex flex-col items-center gap-3 py-6 text-center">
+                  <img src="/monedita/monedita-tranqui.svg" alt="Monedita"
+                       className="w-14 h-14 object-contain opacity-60" />
+                  <p className="text-sm font-semibold text-zinc-600">
+                    Cuando tengas unos cuantos gastos cargados, acá te muestro cómo viene tu mes.
+                  </p>
+                </div>
+              )}
+
+              {/* Historial de meses anteriores */}
+              <HistorialReportes reportes={reportes} mesActivo={mes} />
+
+            </div>
+          )}
+
         </>
       )}
     </div>

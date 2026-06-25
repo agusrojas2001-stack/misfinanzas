@@ -58,7 +58,7 @@ export default function PushPermiso() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-zinc-200 text-sm mb-1">Recibí avisos en tu celular</p>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Para recibir notificaciones, instalá la app primero:{' '}
+                Para recibir avisos, instalá la app primero:{' '}
                 <span className="text-violet-400 font-medium">Compartir → Agregar a inicio</span>
               </p>
             </div>
@@ -77,7 +77,7 @@ export default function PushPermiso() {
         <p className="text-3xl mb-3">🔔</p>
         <p className="font-bold text-zinc-100 mb-1">¿Querés recibir avisos?</p>
         <p className="text-sm text-zinc-400 mb-5 leading-relaxed">
-          Te avisamos cuando un pago está por vencer, llegás al límite de tu presupuesto o alcanzás una meta de ahorro.
+          Te avisamos cuando se acerca un pago, estás por pasarte del presupuesto o llegás a una meta de ahorro.
         </p>
         <div className="flex gap-3">
           <button onClick={cerrar} className="btn-secondary flex-1 py-2.5 text-sm">Ahora no</button>

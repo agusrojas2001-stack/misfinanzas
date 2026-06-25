@@ -31,7 +31,7 @@ function FormCategoria({ inicial, onGuardar, loading }) {
     <form id="form-categoria" onSubmit={handleSubmit} className="space-y-4">
       {/* Emoji picker */}
       <div className="space-y-2">
-        <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Emoji</label>
+        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Emoji</label>
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-2xl flex-shrink-0">
             {emoji}
@@ -63,7 +63,7 @@ function FormCategoria({ inicial, onGuardar, loading }) {
 
       {/* Nombre */}
       <div className="space-y-1">
-        <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Nombre</label>
+        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Nombre</label>
         <input
           type="text"
           placeholder="Ej: Mascota"
@@ -78,7 +78,7 @@ function FormCategoria({ inicial, onGuardar, loading }) {
       {/* Tipo (solo al crear) */}
       {!inicial && (
         <div className="space-y-2">
-          <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Tipo</label>
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Tipo</label>
           <div className="grid grid-cols-3 gap-2">
             {TIPOS.map(t => (
               <button
@@ -102,56 +102,34 @@ function FormCategoria({ inicial, onGuardar, loading }) {
   )
 }
 
-function CategoriaRow({ cat, onEditar, onToggle }) {
+function CategoriaRow({ cat, onEditar }) {
   return (
-    <div className={`flex items-center gap-3 py-3 border-b border-zinc-800/60 last:border-0 ${
-      !cat.activa ? 'opacity-50' : ''
-    }`}>
+    <div className="flex items-center gap-3 py-3 border-b border-zinc-800/60 last:border-0">
       <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-xl flex-shrink-0">
         {cat.emoji}
       </div>
-      <span className={`flex-1 font-medium ${cat.activa ? 'text-zinc-200' : 'text-zinc-500'}`}>
-        {cat.nombre}
-      </span>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onEditar(cat)}
-          className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center
-                     text-zinc-400 transition-all active:scale-95"
-          title="Editar"
-        >
-          ✏️
-        </button>
-        <button
-          onClick={() => onToggle(cat.id, cat.activa)}
-          className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm
-                     transition-all active:scale-95 ${
-                       cat.activa
-                         ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
-                         : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400'
-                     }`}
-          title={cat.activa ? 'Archivar' : 'Activar'}
-        >
-          {cat.activa ? '📦' : '✅'}
-        </button>
-      </div>
+      <span className="flex-1 font-extrabold text-zinc-100">{cat.nombre}</span>
+      <button
+        onClick={() => onEditar(cat)}
+        className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center
+                   text-zinc-400 transition-all active:scale-95"
+        title="Editar"
+      >
+        ✏️
+      </button>
     </div>
   )
 }
 
 export default function CategoriasPage() {
   const navigate = useNavigate()
-  const { categorias, loading, crearCategoria, editarCategoria, toggleArchivar } = useCategorias()
+  const { categorias, loading, crearCategoria, editarCategoria } = useCategorias()
   const [tabActiva, setTabActiva] = useState('gasto')
-  const [mostrarArchivadas, setMostrarArchivadas] = useState(false)
   const [modal, setModal] = useState(null) // null | 'nueva' | { ...cat }
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
-  const filtradas = categorias.filter(c => {
-    if (c.tipo !== tabActiva) return false
-    return mostrarArchivadas ? !c.activa : c.activa
-  })
+  const filtradas = categorias.filter(c => c.tipo === tabActiva && c.activa)
 
   async function handleGuardar(datos) {
     setGuardando(true)
@@ -167,10 +145,6 @@ export default function CategoriasPage() {
     setModal(null)
   }
 
-  async function handleToggle(id, activa) {
-    await toggleArchivar(id, activa)
-  }
-
   return (
     <div className="page-enter px-4 pt-4 pb-2 space-y-4">
       {/* Header */}
@@ -183,8 +157,8 @@ export default function CategoriasPage() {
           ←
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-zinc-100">Categorías 🏷️</h1>
-          <p className="text-xs text-zinc-500">{categorias.filter(c => c.activa).length} activas</p>
+          <h1 className="text-3xl font-black text-zinc-100">Categorías</h1>
+          <p className="text-sm font-normal text-zinc-400">{categorias.filter(c => c.activa).length} activas</p>
         </div>
         <button
           onClick={() => { setModal('nueva'); setError('') }}
@@ -212,38 +186,20 @@ export default function CategoriasPage() {
         ))}
       </div>
 
-      {/* Toggle archivadas */}
-      <div className="flex items-center justify-end">
-        <button
-          onClick={() => setMostrarArchivadas(v => !v)}
-          className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${
-            mostrarArchivadas
-              ? 'bg-zinc-700 border-zinc-600 text-zinc-300'
-              : 'bg-transparent border-zinc-800 text-zinc-500 hover:border-zinc-700'
-          }`}
-        >
-          {mostrarArchivadas ? '✅ Mostrando archivadas' : '📦 Ver archivadas'}
-        </button>
-      </div>
-
       {/* Lista */}
       <div className="card">
         {loading ? (
           <div className="py-8 text-center text-zinc-500 text-sm">Cargando...</div>
         ) : filtradas.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-2xl mb-2">{mostrarArchivadas ? '📦' : '✨'}</p>
-            <p className="text-zinc-500 text-sm">
-              {mostrarArchivadas ? 'Sin categorías archivadas' : 'Sin categorías en este tipo'}
-            </p>
-            {!mostrarArchivadas && (
-              <button
-                onClick={() => { setModal('nueva'); setError('') }}
-                className="text-violet-400 text-sm mt-2 hover:text-violet-300"
-              >
-                Crear una
-              </button>
-            )}
+            <p className="text-2xl mb-2">✨</p>
+            <p className="text-zinc-500 text-sm">Sin categorías en este tipo</p>
+            <button
+              onClick={() => { setModal('nueva'); setError('') }}
+              className="text-violet-400 text-sm mt-2 hover:text-violet-300"
+            >
+              Crear una
+            </button>
           </div>
         ) : (
           filtradas.map(cat => (
@@ -251,7 +207,6 @@ export default function CategoriasPage() {
               key={cat.id}
               cat={cat}
               onEditar={cat => { setModal(cat); setError('') }}
-              onToggle={handleToggle}
             />
           ))
         )}

@@ -92,7 +92,7 @@ export default function RegistrarPage() {
 
   return (
     <div className="page-enter px-4 pt-4 pb-6">
-      <Header title="Registrar" subtitle="Nuevo movimiento" />
+      <Header title="Registrar" subtitle="Anotá un gasto, ingreso o ahorro" />
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         {/* Tipo */}
@@ -115,8 +115,8 @@ export default function RegistrarPage() {
 
         {/* Monto */}
         <div className="card space-y-2">
-          <label className="text-xs text-zinc-500 font-medium uppercase tracking-wide">
-            Monto (ARS)
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+            ¿Cuánto? (ARS)
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl">$</span>
@@ -133,7 +133,7 @@ export default function RegistrarPage() {
 
         {/* Selector de categoría */}
         <div className="card space-y-2">
-          <label className="text-xs text-zinc-500 font-medium uppercase tracking-wide block">
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
             Categoría
           </label>
 
@@ -177,7 +177,7 @@ export default function RegistrarPage() {
                           : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'}`}
                     >
                       <span className="text-2xl">{cat.emoji}</span>
-                      <span className="text-[10px] font-medium leading-tight text-center">{cat.nombre}</span>
+                      <span className="text-xs font-medium leading-tight text-center">{cat.nombre}</span>
                     </button>
                   ))}
                 </div>
@@ -200,7 +200,7 @@ export default function RegistrarPage() {
 
         {/* Descripción */}
         <div className="card space-y-2">
-          <label className="text-xs text-zinc-500 font-medium uppercase tracking-wide block">
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
             Descripción (opcional)
           </label>
           <input
@@ -215,8 +215,8 @@ export default function RegistrarPage() {
         {/* Vincular a meta (solo ahorro) */}
         {tipo === 'ahorro' && metas.length > 0 && (
           <div className="card space-y-2">
-            <label className="text-xs text-zinc-500 font-medium uppercase tracking-wide block">
-              Vincular a meta (opcional)
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
+              ¿A qué meta va este ahorro? (opcional)
             </label>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => setMetaId('')}
@@ -237,7 +237,7 @@ export default function RegistrarPage() {
 
         {/* Fecha */}
         <div className="card space-y-2 overflow-hidden">
-          <label className="text-xs text-zinc-500 font-medium uppercase tracking-wide block">
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
             Fecha
           </label>
           <input
@@ -264,7 +264,7 @@ export default function RegistrarPage() {
             exito ? 'bg-emerald-600 hover:bg-emerald-600 border-emerald-600' : ''
           }`}
         >
-          {exito ? '✅ ¡Registrado!' : guardando ? 'Guardando...' : `Registrar ${tipoActual.label}`}
+          {exito ? '✅ ¡Anotado!' : guardando ? 'Guardando...' : `Registrar ${tipoActual.label}`}
         </button>
       </form>
     </div>

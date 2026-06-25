@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
-import { Bell, Menu, Home, MessageCircle, Target, Wallet, TrendingUp, User, LogOut } from 'lucide-react'
+import { Bell, Menu, Home, MessageCircle, Target, Wallet, TrendingUp, User, LogOut, Tag } from 'lucide-react'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificaciones } from '../../hooks/useNotificaciones'
@@ -202,7 +202,7 @@ export default function Layout() {
               onClick={() => navTo('/categorias')}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
             >
-              <span className="text-lg">🏷️</span> Categorías
+              <Tag size={18} strokeWidth={1.8} /> Categorías
             </button>
             <button
               onClick={() => navTo('/recordatorios')}

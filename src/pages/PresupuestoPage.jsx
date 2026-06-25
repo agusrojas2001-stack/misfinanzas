@@ -109,8 +109,8 @@ export default function PresupuestoPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-100">Presupuesto 📊</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">{mesLabel(mes)}</p>
+          <h1 className="text-3xl font-black text-zinc-100">Presupuesto 📊</h1>
+          <p className="text-sm font-normal text-zinc-400 mt-0.5">{mesLabel(mes)}</p>
         </div>
         <button
           onClick={() => { setModal('categoria'); setCatId(''); setMonto(''); setError('') }}
@@ -124,7 +124,7 @@ export default function PresupuestoPage() {
       {/* Presupuesto general del mes */}
       <div className="card bg-gradient-to-br from-violet-900/30 to-zinc-900 border-violet-800/20">
         <div className="flex items-start justify-between mb-2">
-          <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Presupuesto total del mes</p>
+          <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Presupuesto total del mes</p>
           <button
             onClick={abrirGeneral}
             className="text-xs text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20
@@ -148,7 +148,7 @@ export default function PresupuestoPage() {
                   : 'text-emerald-400'
                 return (
                   <>
-                    <p className="text-xs text-zinc-500 mb-0.5">{excedido ? 'Excediste el presupuesto en' : 'Disponible'}</p>
+                    <p className="text-xs text-zinc-500 mb-0.5">{excedido ? 'Te pasaste del presupuesto en' : 'Disponible'}</p>
                     <p className={`${balanceFontClass(Math.abs(restante))} font-extrabold tracking-tight ${color}`}>
                       {formatARS(Math.abs(restante))}
                     </p>
@@ -159,13 +159,13 @@ export default function PresupuestoPage() {
 
             {/* Gastado y máximo — secundario */}
             <div className="flex justify-between text-sm text-zinc-500 mb-1 gap-2">
-              <span className="min-w-0 truncate">{formatCompact(totalGastadoMes)} <span className="text-zinc-600">gastados</span></span>
-              <span className="text-zinc-600 flex-shrink-0">de {formatCompact(presupGeneral.monto_max)}</span>
+              <span className="min-w-0 truncate">{formatARS(totalGastadoMes)} <span className="text-zinc-600">gastados</span></span>
+              <span className="text-zinc-600 flex-shrink-0">de {formatARS(presupGeneral.monto_max)}</span>
             </div>
             <BarraProgreso gastado={totalGastadoMes} maximo={presupGeneral.monto_max} />
           </>
         ) : (
-          <p className="text-zinc-500 text-sm mt-1">Sin presupuesto general definido</p>
+          <p className="text-zinc-500 text-sm mt-1">Armá tu primer presupuesto y te aviso si te estás pasando.</p>
         )}
       </div>
 
@@ -175,8 +175,8 @@ export default function PresupuestoPage() {
       ) : presupCats.length === 0 ? (
         <div className="card py-10 text-center">
           <p className="text-2xl mb-2">📋</p>
-          <p className="text-zinc-400 font-medium">Sin presupuestos por categoría</p>
-          <p className="text-zinc-600 text-sm mt-1">Tocá "+ Categoría" para crear uno</p>
+          <p className="text-zinc-400 font-medium">Sin presupuestos por categoría todavía.</p>
+          <p className="text-zinc-600 text-sm mt-1">Tocá "+ Categoría" para crear uno.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -191,13 +191,13 @@ export default function PresupuestoPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{p.categorias?.emoji ?? '📦'}</span>
-                    <span className="font-semibold text-zinc-200">{p.categorias?.nombre}</span>
+                    <span className="font-extrabold text-zinc-100">{p.categorias?.nombre}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       excedido ? 'bg-rose-500/20 text-rose-400' : 'bg-zinc-800 text-zinc-500'
                     }`}>
-                      {excedido ? '⚠️ Excedido' : `${pct}%`}
+                      {excedido ? '⚠️ Pasaste el límite' : `${pct}%`}
                     </span>
                     <button
                       onClick={() => abrirEditarCategoria(p)}
@@ -217,16 +217,16 @@ export default function PresupuestoPage() {
                 </div>
 
                 <div className="flex justify-between text-sm mt-1 gap-2">
-                  <span className={`min-w-0 truncate ${excedido ? 'text-rose-400 font-semibold' : 'text-zinc-300'}`}>
-                    {formatCompact(gastado)} gastados
+                  <span className={`min-w-0 truncate ${excedido ? 'text-rose-400 font-extrabold' : 'text-zinc-300'}`}>
+                    {formatARS(gastado)} gastados
                   </span>
-                  <span className="text-zinc-500 flex-shrink-0">máx. {formatCompact(p.monto_max)}</span>
+                  <span className="text-zinc-500 flex-shrink-0">máx. {formatARS(p.monto_max)}</span>
                 </div>
 
                 <BarraProgreso gastado={gastado} maximo={p.monto_max} />
 
                 {!excedido && (
-                  <p className="text-xs text-zinc-600 mt-1">{formatCompact(restante)} disponibles</p>
+                  <p className="text-xs text-zinc-600 mt-1">{formatARS(restante)} disponibles</p>
                 )}
               </div>
             )
@@ -250,7 +250,7 @@ export default function PresupuestoPage() {
         >
           {error && <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2 mb-4"><p className="text-rose-400 text-sm">{error}</p></div>}
           <div className="space-y-1">
-            <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Monto máximo del mes (ARS)</label>
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">¿Cuánto querés gastar este mes? (ARS)</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
               <input
@@ -281,7 +281,7 @@ export default function PresupuestoPage() {
           {error && <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2 mb-4"><p className="text-rose-400 text-sm">{error}</p></div>}
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Categoría</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Categoría</label>
               {editandoPresup ? (
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm">
                   <span>{editandoPresup.categorias?.emoji}</span>
@@ -303,7 +303,7 @@ export default function PresupuestoPage() {
               )}
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Monto máximo (ARS)</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Límite para esta categoría (ARS)</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
                 <input type="text" inputMode="numeric" placeholder="0" autoFocus

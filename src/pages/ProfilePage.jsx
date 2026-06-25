@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 function Section({ title, children }) {
   return (
     <div className="space-y-3">
-      <p className="text-xs text-zinc-600 uppercase tracking-wide font-medium px-1">{title}</p>
+      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide px-1">{title}</p>
       <div className="card space-y-4">{children}</div>
     </div>
   )
@@ -15,7 +15,7 @@ function Section({ title, children }) {
 function Field({ label, children }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-xs text-zinc-500 font-medium">{label}</p>
+      <p className="text-xs font-bold text-zinc-500">{label}</p>
       {children}
     </div>
   )
@@ -64,18 +64,18 @@ export default function ProfilePage() {
     setPassErr('')
     setPassOk(false)
     if (passNueva.length < 6) {
-      setPassErr('La contraseña debe tener al menos 6 caracteres.')
+      setPassErr('La contraseña tiene que tener al menos 6 caracteres.')
       return
     }
     if (passNueva !== passConfirm) {
-      setPassErr('Las contraseñas no coinciden.')
+      setPassErr('Las contraseñas no coinciden. Revisalas.')
       return
     }
     setSavingPass(true)
     const { error } = await supabase.auth.updateUser({ password: passNueva })
     if (error) {
       setPassErr(error.message === 'New password should be different from the old password.'
-        ? 'La nueva contraseña debe ser diferente a la actual.'
+        ? 'La nueva contraseña tiene que ser diferente a la que ya tenés.'
         : 'No se pudo cambiar. Intentá de nuevo.')
     } else {
       setPassOk(true)
@@ -96,7 +96,7 @@ export default function ProfilePage() {
           className="w-8 h-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-all">
           ‹
         </button>
-        <h1 className="text-xl font-bold text-zinc-100">Mi perfil</h1>
+        <h1 className="text-3xl font-black text-zinc-100">Mi perfil</h1>
       </div>
 
       {/* Avatar */}
@@ -106,7 +106,7 @@ export default function ProfilePage() {
           {iniciales}
         </div>
         <div className="text-center">
-          <p className="font-semibold text-zinc-100">{perfil?.nombre || user?.email?.split('@')[0]}</p>
+          <p className="font-extrabold text-zinc-100">{perfil?.nombre || user?.email?.split('@')[0]}</p>
           <p className="text-sm text-zinc-500">{user?.email}</p>
         </div>
       </div>
@@ -127,10 +127,10 @@ export default function ProfilePage() {
             <p className="text-sm text-zinc-400 bg-zinc-800/50 border border-zinc-800 rounded-xl px-3 py-2.5">
               {user?.email}
             </p>
-            <p className="text-[11px] text-zinc-600">El email no se puede cambiar desde aquí.</p>
+            <p className="text-[11px] text-zinc-600">El email no se puede cambiar desde acá.</p>
           </Field>
           {nombreErr && <p className="text-xs text-rose-400">{nombreErr}</p>}
-          {nombreOk  && <p className="text-xs text-emerald-400">✓ Nombre actualizado</p>}
+          {nombreOk  && <p className="text-xs text-emerald-400">✓ Listo, nombre guardado.</p>}
           <button type="submit" disabled={savingNombre || !nombre.trim()}
             className="btn-primary py-2.5 text-sm disabled:opacity-40">
             {savingNombre ? 'Guardando...' : 'Guardar nombre'}
@@ -160,7 +160,7 @@ export default function ProfilePage() {
             />
           </Field>
           {passErr && <p className="text-xs text-rose-400">{passErr}</p>}
-          {passOk  && <p className="text-xs text-emerald-400">✓ Contraseña actualizada</p>}
+          {passOk  && <p className="text-xs text-emerald-400">✓ Contraseña cambiada. Joya.</p>}
           <button type="submit" disabled={savingPass || !passNueva || !passConfirm}
             className="btn-primary py-2.5 text-sm disabled:opacity-40">
             {savingPass ? 'Cambiando...' : 'Cambiar contraseña'}

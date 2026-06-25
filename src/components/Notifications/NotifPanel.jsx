@@ -101,7 +101,7 @@ export default function NotifPanel({
                       </p>
                     </div>
                     <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.mensaje}</p>
-                    <p className="text-[10px] text-zinc-600 mt-1">{tiempoRelativo(n.created_at)}</p>
+                    <p className="text-xs text-zinc-600 mt-1">{tiempoRelativo(n.created_at)}</p>
                   </div>
 
                   {/* Botón eliminar */}

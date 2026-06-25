@@ -150,13 +150,13 @@ export default function MovimientosPage() {
   return (
     <div className="page-enter px-4 md:px-6 pt-4 pb-6 space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-zinc-100">Movimientos 📋</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Historial completo</p>
+        <h1 className="text-3xl font-black text-zinc-100">Movimientos 📋</h1>
+        <p className="text-sm font-normal text-zinc-400 mt-0.5">Todos tus movimientos</p>
       </div>
 
       {/* Filtro por rango de fechas */}
       <div className="card space-y-3 overflow-hidden">
-        <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Filtrar por período</p>
+        <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Filtrar por período</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1 min-w-0 overflow-hidden">
             <label className="text-xs text-zinc-600">Desde</label>
@@ -186,7 +186,7 @@ export default function MovimientosPage() {
       {/* Resumen del período filtrado */}
       {filtroActivo && (
         <div className="card bg-gradient-to-br from-violet-900/20 to-zinc-900 border-violet-800/20 space-y-2">
-          <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">
+          <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
             Resumen del período
             {desde && hasta && (
               <span className="normal-case text-zinc-600 ml-1">
@@ -197,20 +197,20 @@ export default function MovimientosPage() {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <p className="text-xs text-zinc-500 mb-0.5">Ingresos</p>
-              <p className="font-bold text-emerald-400 text-sm">{formatARS(totalFiltrado.ingresos)}</p>
+              <p className="font-extrabold font-num text-emerald-400 text-sm">{formatARS(totalFiltrado.ingresos)}</p>
             </div>
             <div>
               <p className="text-xs text-zinc-500 mb-0.5">Gastos</p>
-              <p className="font-bold text-rose-400 text-sm">{formatARS(totalFiltrado.gastos)}</p>
+              <p className="font-extrabold font-num text-rose-400 text-sm">{formatARS(totalFiltrado.gastos)}</p>
             </div>
             <div>
               <p className="text-xs text-zinc-500 mb-0.5">Ahorro</p>
-              <p className="font-bold text-violet-400 text-sm">{formatARS(totalFiltrado.ahorro)}</p>
+              <p className="font-extrabold font-num text-violet-400 text-sm">{formatARS(totalFiltrado.ahorro)}</p>
             </div>
           </div>
           <div className="border-t border-zinc-800 pt-2 flex justify-between items-center">
             <p className="text-xs text-zinc-500">Balance del período</p>
-            <p className={`font-bold text-sm ${totalFiltrado.ingresos - totalFiltrado.gastos - totalFiltrado.ahorro >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <p className={`font-extrabold font-num text-sm ${totalFiltrado.ingresos - totalFiltrado.gastos - totalFiltrado.ahorro >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {formatARS(totalFiltrado.ingresos - totalFiltrado.gastos - totalFiltrado.ahorro)}
             </p>
           </div>
@@ -223,8 +223,8 @@ export default function MovimientosPage() {
       ) : meses.length === 0 ? (
         <div className="card py-12 text-center border-dashed border-zinc-700">
           <p className="text-3xl mb-3">📭</p>
-          <p className="text-zinc-400 font-medium">Sin movimientos todavía</p>
-          <p className="text-zinc-500 text-sm mt-1">Registrá tu primer gasto o ingreso</p>
+          <p className="text-zinc-400 font-medium">Acá van a aparecer todos tus movimientos.</p>
+          <p className="text-zinc-500 text-sm mt-1">Cargá tu primer gasto o plata que cobrés.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -232,7 +232,7 @@ export default function MovimientosPage() {
             <div key={mes}>
               {/* Cabecera de mes */}
               <div className="flex items-center gap-3 mb-3 sticky top-0 bg-zinc-950/95 backdrop-blur-sm py-2 -mx-4 px-4 z-10">
-                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide whitespace-nowrap">
                   {mesLabel(mes)}
                 </span>
                 <div className="flex-1 h-px bg-zinc-800" />
@@ -250,14 +250,14 @@ export default function MovimientosPage() {
                       {m.categorias?.emoji ?? '💸'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-zinc-200 truncate leading-tight">
+                      <p className="font-extrabold text-zinc-100 truncate leading-tight">
                         {m.concepto || m.categorias?.nombre || m.tipo}
                       </p>
                       <p className="text-xs text-zinc-500 mt-0.5">
                         {diaLabel(m.fecha)} · {m.categorias?.nombre}
                       </p>
                     </div>
-                    <p className={`font-bold text-sm flex-shrink-0 ${COLORES[m.tipo]}`}>
+                    <p className={`font-extrabold font-num text-sm flex-shrink-0 ${COLORES[m.tipo]}`}>
                       {SIGNOS[m.tipo]}{formatARS(m.monto)}
                     </p>
                     <button
@@ -294,7 +294,7 @@ export default function MovimientosPage() {
           <div className="space-y-4">
             {/* Tipo */}
             <div className="space-y-2">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Tipo</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Tipo</label>
               <div className="grid grid-cols-3 gap-2">
                 {TIPOS.map(t => (
                   <button key={t.id} type="button" onClick={() => handleTipoEdit(t.id)}
@@ -308,7 +308,7 @@ export default function MovimientosPage() {
 
             {/* Monto */}
             <div className="space-y-1">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Monto (ARS)</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto (ARS)</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
                 <input type="text" inputMode="numeric" placeholder="0" autoFocus
@@ -320,7 +320,7 @@ export default function MovimientosPage() {
 
             {/* Categoría */}
             <div className="space-y-1">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Categoría</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Categoría</label>
               <button type="button" onClick={() => setSelectorAbierto(v => !v)}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all
                   ${categoriaSeleccionada ? 'bg-zinc-800 border-violet-500/50 text-zinc-100' : 'bg-zinc-800 border-zinc-700 text-zinc-500'}
@@ -346,7 +346,7 @@ export default function MovimientosPage() {
                               ? 'bg-violet-600/30 border-violet-500 text-violet-300'
                               : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'}`}>
                           <span className="text-xl">{cat.emoji}</span>
-                          <span className="text-[10px] font-medium leading-tight text-center">{cat.nombre}</span>
+                          <span className="text-xs font-medium leading-tight text-center">{cat.nombre}</span>
                         </button>
                       ))}
                     </div>
@@ -357,7 +357,7 @@ export default function MovimientosPage() {
 
             {/* Concepto */}
             <div className="space-y-1">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Descripción</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Descripción</label>
               <input type="text" placeholder="Opcional..." value={concepto}
                 onChange={e => setConcepto(e.target.value)} className="input-dark" />
             </div>
@@ -365,7 +365,7 @@ export default function MovimientosPage() {
             {/* Meta (solo ahorro) */}
             {tipo === 'ahorro' && metas.length > 0 && (
               <div className="space-y-2">
-                <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Meta vinculada</label>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Meta vinculada</label>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => setMetaId('')}
                     className={`px-3 py-2 rounded-xl border text-sm transition-all
@@ -385,7 +385,7 @@ export default function MovimientosPage() {
 
             {/* Fecha */}
             <div className="space-y-1">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Fecha</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Fecha</label>
               <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
                 className="input-dark min-w-0" style={{ colorScheme: 'dark' }} />
             </div>

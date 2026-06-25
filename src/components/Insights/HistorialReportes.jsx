@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import ReporteMensual from './ReporteMensual'
 
 function mesLabel(mes) {
@@ -23,11 +24,15 @@ export default function HistorialReportes({ reportes, mesActivo }) {
   }, {})
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-zinc-400">Historial de análisis</h2>
+    <div className="space-y-4">
+      <p className="text-xs font-black uppercase tracking-widest text-zinc-500">
+        Historial de análisis
+      </p>
       {Object.entries(grupos).sort((a, b) => b[0].localeCompare(a[0])).map(([mes, lista]) => (
         <div key={mes} className="space-y-2">
-          <p className="text-xs text-zinc-600 font-medium uppercase tracking-wide">{mesLabel(mes + '-01')}</p>
+          <p className="text-xs font-bold text-zinc-600 uppercase tracking-wide">
+            {mesLabel(mes + '-01')}
+          </p>
           {lista.map((r) => {
             const isOpen = abierto === r.id
             const fecha = new Date(r.generado_at).toLocaleDateString('es-AR', {
@@ -37,18 +42,20 @@ export default function HistorialReportes({ reportes, mesActivo }) {
               <div key={r.id}>
                 <button
                   onClick={() => setAbierto(isOpen ? null : r.id)}
-                  className="w-full flex items-center justify-between bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl px-4 py-3 transition-all">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">✨</span>
+                  className="w-full flex items-center justify-between rounded-[18px] px-4 py-3 transition-all"
+                  style={{ background: '#18181b', border: '1px solid #1f1f23' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles size={16} className="text-violet-400 flex-shrink-0" />
                     <div className="text-left">
-                      <p className="text-xs font-medium text-zinc-300">Análisis con IA</p>
-                      <p className="text-[10px] text-zinc-600">{fecha}</p>
+                      <p className="text-sm font-bold text-zinc-200">Análisis con IA</p>
+                      <p className="text-xs text-zinc-500">{fecha}</p>
                     </div>
                   </div>
-                  <span className="text-zinc-600 text-xs">{isOpen ? '▲' : '▾'}</span>
+                  <span className="text-zinc-500 text-xs">{isOpen ? '▲' : '▾'}</span>
                 </button>
                 {isOpen && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <ReporteMensual
                       contenido={r.contenido}
                       generadoAt={r.generado_at}

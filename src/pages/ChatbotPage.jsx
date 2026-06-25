@@ -38,7 +38,7 @@ const TIPOS_COLOR = {
 
 const MSG_BIENVENIDA = {
   id: 0, from: 'bot', tipo: 'texto',
-  text: '¡Hola! Soy Monedita 🪙\n\nRegistrá movimientos con frases como:\n• "gasté 3500 en uber"\n• "cobré el sueldo 850k"\n• "ahorré 50 mil en el banco"\n\nTambién podés preguntarme "¿cómo voy este mes?" 📊',
+  text: 'Hola, soy Monedita. Decime qué gastaste y lo anoto por vos. Ej: "2000 de café" o "cobré 500000 de trabajo". También podés preguntarme "¿cómo voy este mes?" 📊',
 }
 
 const CHIPS_RAPIDOS = [
@@ -140,17 +140,17 @@ export default function ChatbotPage() {
 
     if (!tipo && !monto) {
       addMsg({ from: 'bot', tipo: 'texto',
-        text: 'No entendí bien 😅\n\nProbá con algo como:\n• "gasté 5000 en comida"\n• "cobré 200k"\n• "ahorré 50 mil"\n\nO preguntame "¿cómo voy este mes?" 📊' })
+        text: 'No entendí bien 😅\n\nProbá con algo como:\n• "gasté 5000 en comida"\n• "cobré 200 mil de sueldo"\n• "ahorré 50 mil"\n\nO preguntame "¿cómo voy este mes?" 📊' })
       return
     }
     if (!tipo) {
       addMsg({ from: 'bot', tipo: 'texto',
-        text: '¿Es un gasto, ingreso o ahorro? Empezá con "gasté", "cobré" o "ahorré".' })
+        text: '¿Es un gasto, plata que cobré o un ahorro? Empezá con "gasté", "cobré" o "ahorré".' })
       return
     }
     if (!monto) {
       addMsg({ from: 'bot', tipo: 'texto',
-        text: `Detecté un ${TIPOS_LABEL[tipo].toLowerCase()}, pero no vi el monto 🤔\nEjemplos: "gasté 3500", "gasté 3k", "gasté 50 mil"` })
+        text: `Entiendo que es un ${TIPOS_LABEL[tipo].toLowerCase()}, pero no vi cuánto 🤔\nEjemplos: "gasté 3500", "gasté 3k", "gasté 50 mil"` })
       return
     }
 
@@ -175,7 +175,7 @@ export default function ChatbotPage() {
       .gte('fecha', inicio).lte('fecha', fin)
 
     if (!data || data.length === 0) {
-      addMsg({ from: 'bot', tipo: 'texto', text: 'Todavía no hay movimientos registrados este mes 📋' })
+      addMsg({ from: 'bot', tipo: 'texto', text: 'Todavía no cargaste nada este mes 📋' })
       return
     }
 
@@ -208,7 +208,7 @@ export default function ChatbotPage() {
 
   async function handleConfirmar(datos) {
     if (!datos.categoria) {
-      addMsg({ from: 'bot', tipo: 'texto', text: 'Seleccioná una categoría antes de guardar 👆' })
+      addMsg({ from: 'bot', tipo: 'texto', text: 'Elegí una categoría primero 👆' })
       return
     }
     setGuardando(true)
@@ -222,17 +222,17 @@ export default function ChatbotPage() {
     })
     setGuardando(false)
     if (error) {
-      addMsg({ from: 'bot', tipo: 'texto', text: '❌ No se pudo guardar. Intentá de nuevo.' })
+      addMsg({ from: 'bot', tipo: 'texto', text: 'Uh, no se pudo guardar. Intentá de nuevo.' })
       return
     }
     addMsg({
       from: 'bot', tipo: 'texto',
-      text: `✅ Guardado: ${TIPOS_LABEL[datos.tipo]} de ${formatARS(datos.monto)} en ${datos.categoria.emoji} ${datos.categoria.nombre}\n\n¿Otro movimiento?`,
+      text: `✅ Anotado. ${TIPOS_LABEL[datos.tipo]} de ${formatARS(datos.monto)} en ${datos.categoria.emoji} ${datos.categoria.nombre}.\n\n¿Anotamos algo más?`,
     })
   }
 
   function handleCancelar() {
-    addMsg({ from: 'bot', tipo: 'texto', text: 'Cancelado. ¿Qué otro movimiento querés registrar?' })
+    addMsg({ from: 'bot', tipo: 'texto', text: 'Cancelado. ¿Anotamos otro?' })
   }
 
   return (
@@ -245,7 +245,7 @@ export default function ChatbotPage() {
             <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-bold text-zinc-100 leading-tight">Monedita</h1>
+            <h1 className="font-extrabold text-zinc-100 leading-tight">Monedita</h1>
             <p className="text-xs flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--mn-income)' }} />
               <span style={{ color: 'var(--mn-income)' }}>en línea</span>
@@ -406,7 +406,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
   return (
     <div className="max-w-[85%] bg-zinc-800 border border-zinc-700 rounded-2xl rounded-bl-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-700">
-        <p className="text-xs text-zinc-500 font-medium mb-1">Esto es lo que detecté:</p>
+        <p className="text-xs text-zinc-500 font-medium mb-1">Esto es lo que entendí:</p>
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-sm font-bold uppercase tracking-wide ${TIPOS_COLOR[datos.tipo]}`}>
             {TIPOS_LABEL[datos.tipo]}
@@ -433,7 +433,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
             </button>
           )}
           {!editandoMonto && !confirmado && (
-            <span className="text-[10px] text-zinc-600">✏️ editá el monto</span>
+            <span className="text-xs text-zinc-600">✏️ tocá para cambiar</span>
           )}
         </div>
       </div>
@@ -467,7 +467,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
           {/* Mini-form nueva categoría */}
           {creandoCat && (
             <div className="mt-2 p-3 rounded-xl bg-zinc-900 border border-zinc-700 space-y-2">
-              <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">Nueva categoría</p>
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">Nueva categoría</p>
 
               {/* Emojis rápidos */}
               <div className="flex flex-wrap gap-1.5">
@@ -501,7 +501,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
                            placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
               />
 
-              {errorCat && <p className="text-[10px] text-rose-400">{errorCat}</p>}
+              {errorCat && <p className="text-xs text-rose-400">{errorCat}</p>}
 
               <div className="flex gap-2">
                 <button onClick={() => { setCreandoCat(false); setNuevaNombre(''); setErrorCat('') }}

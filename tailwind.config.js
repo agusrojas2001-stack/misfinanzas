@@ -27,6 +27,12 @@ export default {
         sans: ['Nunito', 'system-ui', 'sans-serif'],
         num:  ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        // Escala levemente subida — cascadea en toda la app sin tocar JSX
+        'xs':   ['0.8125rem', { lineHeight: '1.25rem' }],   // 13px (era 12px)
+        'sm':   ['0.9375rem', { lineHeight: '1.5rem'  }],   // 15px (era 14px)
+        'base': ['1rem',      { lineHeight: '1.625rem'}],   // 16px (sin cambio)
+      },
       borderRadius: {
         mn:    '14px',
         'mn-lg': '18px',

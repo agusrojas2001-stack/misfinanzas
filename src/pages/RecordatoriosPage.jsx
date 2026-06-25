@@ -97,7 +97,7 @@ export default function RecordatoriosPage() {
   }
 
   async function handleGuardar() {
-    if (!form.nombre.trim()) { setError('El nombre es obligatorio.'); return }
+    if (!form.nombre.trim()) { setError('Poné un nombre para el recordatorio.'); return }
     setGuardando(true)
     setError('')
 
@@ -145,7 +145,7 @@ export default function RecordatoriosPage() {
 
   return (
     <div className="page-enter px-4 pt-2 pb-2 space-y-4">
-      <Header title="Recordatorios 🔔" subtitle="Avisá sobre pagos y gastos recurrentes" />
+      <Header title="Recordatorios 🔔" subtitle="Pagos que se repiten y no querés olvidar" />
 
       {/* Botón nuevo */}
       <button onClick={abrirCrear} className="btn-primary w-full">
@@ -158,13 +158,13 @@ export default function RecordatoriosPage() {
       ) : recordatorios.length === 0 ? (
         <div className="text-center py-12 space-y-2">
           <span className="text-4xl">🔕</span>
-          <p className="text-zinc-500 text-sm">No tenés recordatorios todavía.</p>
+          <p className="text-zinc-500 text-sm">No tenés recordatorios todavía. Creá uno para no olvidar los pagos que se repiten.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {activos.length > 0 && (
             <section className="space-y-2">
-              <p className="text-xs text-zinc-600 uppercase tracking-wide font-medium px-1">Activos</p>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide px-1">Activos</p>
               {activos.map(rec => (
                 <RecCard
                   key={rec.id}
@@ -179,7 +179,7 @@ export default function RecordatoriosPage() {
 
           {pausados.length > 0 && (
             <section className="space-y-2">
-              <p className="text-xs text-zinc-600 uppercase tracking-wide font-medium px-1">Pausados</p>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide px-1">Pausados</p>
               {pausados.map(rec => (
                 <RecCard
                   key={rec.id}
@@ -217,7 +217,7 @@ export default function RecordatoriosPage() {
 
             {/* Emoji picker */}
             <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">Emoji</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Emoji</label>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {EMOJIS_RAPIDOS.map(e => (
                   <button
@@ -245,7 +245,7 @@ export default function RecordatoriosPage() {
 
             {/* Nombre */}
             <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">Nombre *</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Nombre *</label>
               <input
                 type="text"
                 value={form.nombre}
@@ -257,7 +257,7 @@ export default function RecordatoriosPage() {
 
             {/* Monto estimado */}
             <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">Monto estimado (opcional)</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto estimado (opcional)</label>
               <input
                 type="number"
                 value={form.monto_estimado}
@@ -271,7 +271,7 @@ export default function RecordatoriosPage() {
 
             {/* Categoría sugerida */}
             <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">Categoría sugerida (opcional)</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Categoría sugerida (opcional)</label>
               <select
                 value={form.categoria_sugerida_id}
                 onChange={e => setF('categoria_sugerida_id', e.target.value)}
@@ -286,7 +286,7 @@ export default function RecordatoriosPage() {
 
             {/* Frecuencia */}
             <div>
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">Frecuencia</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Frecuencia</label>
               <div className="grid grid-cols-4 gap-1 mt-1.5">
                 {[
                   { val: 'unico',   label: 'Único' },
@@ -312,7 +312,7 @@ export default function RecordatoriosPage() {
             {/* Campos condicionales */}
             {form.frecuencia === 'unico' && (
               <div>
-                <label className="text-xs text-zinc-500 uppercase tracking-wide">Fecha</label>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Fecha</label>
                 <input
                   type="date"
                   value={form.fecha_unica}
@@ -324,7 +324,7 @@ export default function RecordatoriosPage() {
 
             {form.frecuencia === 'semanal' && (
               <div>
-                <label className="text-xs text-zinc-500 uppercase tracking-wide">Día de la semana</label>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Día de la semana</label>
                 <select
                   value={form.dia}
                   onChange={e => setF('dia', e.target.value)}
@@ -340,7 +340,7 @@ export default function RecordatoriosPage() {
 
             {form.frecuencia === 'mensual' && (
               <div>
-                <label className="text-xs text-zinc-500 uppercase tracking-wide">Día del mes (1-31)</label>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Día del mes (1-31)</label>
                 <input
                   type="number"
                   value={form.dia}
@@ -364,7 +364,7 @@ export default function RecordatoriosPage() {
             {form.frecuencia === 'anual' && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wide">Día</label>
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Día</label>
                   <input
                     type="number"
                     value={form.dia}
@@ -384,7 +384,7 @@ export default function RecordatoriosPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wide">Mes</label>
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Mes</label>
                   <select
                     value={form.mes}
                     onChange={e => setF('mes', e.target.value)}
@@ -401,7 +401,7 @@ export default function RecordatoriosPage() {
 
             {/* Hora */}
             <div className="overflow-hidden">
-              <label className="text-xs text-zinc-500 uppercase tracking-wide">Hora del aviso</label>
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Hora del aviso</label>
               <input
                 type="time"
                 value={form.hora}
@@ -433,7 +433,7 @@ function RecCard({ rec, onEdit, onToggle, onDelete }) {
       <span className="text-2xl shrink-0">{rec.emoji}</span>
 
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-zinc-100 text-sm truncate">{rec.nombre}</p>
+        <p className="font-extrabold text-zinc-100 text-base truncate">{rec.nombre}</p>
         <p className="text-xs text-zinc-500 mt-0.5">{labelFrecuencia(rec)}</p>
         {proximo && (
           <p className={`text-[11px] mt-0.5 font-medium
@@ -444,7 +444,7 @@ function RecCard({ rec, onEdit, onToggle, onDelete }) {
           </p>
         )}
         {rec.monto_estimado != null && (
-          <p className="text-[11px] text-zinc-600">~${Number(rec.monto_estimado).toLocaleString('es-AR')}</p>
+          <p className="text-xs font-normal text-zinc-400">~${Number(rec.monto_estimado).toLocaleString('es-AR')}</p>
         )}
       </div>
 

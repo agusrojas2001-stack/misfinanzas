@@ -15,10 +15,10 @@ function MenuItem({ emoji, label, sublabel, onClick, danger }) {
     >
       <span className="text-2xl">{emoji}</span>
       <div className="flex-1 text-left">
-        <p className={`font-medium text-sm ${danger ? 'text-rose-400' : 'text-zinc-200'}`}>
+        <p className={`font-extrabold text-sm ${danger ? 'text-rose-400' : 'text-zinc-100'}`}>
           {label}
         </p>
-        {sublabel && <p className="text-xs text-zinc-500 mt-0.5">{sublabel}</p>}
+        {sublabel && <p className="text-xs font-normal text-zinc-400 mt-0.5">{sublabel}</p>}
       </div>
       <span className="text-zinc-600">›</span>
     </button>
@@ -45,14 +45,14 @@ export default function MenuPage() {
           👤
         </div>
         <div>
-          <p className="font-bold text-zinc-100">{perfil?.nombre || user?.email?.split('@')[0]}</p>
-          <p className="text-sm text-zinc-500">{user?.email}</p>
+          <p className="font-extrabold text-zinc-100">{perfil?.nombre || user?.email?.split('@')[0]}</p>
+          <p className="text-sm font-normal text-zinc-400">{user?.email}</p>
         </div>
       </div>
 
       {/* Opciones */}
       <div className="space-y-2">
-        <p className="text-xs text-zinc-600 uppercase tracking-wide font-medium px-1">Configuración</p>
+        <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide px-1">Configuración</p>
         <MenuItem
           emoji="🏷️"
           label="Categorías"
@@ -74,7 +74,7 @@ export default function MenuPage() {
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-zinc-600 uppercase tracking-wide font-medium px-1">Cuenta</p>
+        <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide px-1">Cuenta</p>
         <MenuItem
           emoji="👤"
           label="Editar perfil"
@@ -90,7 +90,7 @@ export default function MenuPage() {
       </div>
 
       <div className="text-center py-4">
-        <p className="text-xs text-zinc-700">MisFinanzas v0.1.0</p>
+        <p className="text-xs text-zinc-700">Mis Numeritos v0.1.0</p>
       </div>
     </div>
   )
