@@ -27,7 +27,7 @@ export default function BottomNav() {
         return
       }
       const correction = Math.max(0, baseH - window.innerHeight)
-      navRef.current.style.transform = correction > 0 ? `translateY(${correction}px)` : ''
+      navRef.current.style.transform = correction > 120 ? `translateY(${correction}px)` : ''
     }
 
     window.addEventListener('resize', handleResize)

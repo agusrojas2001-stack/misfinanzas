@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCategorias } from '../hooks/useCategorias'
@@ -41,7 +41,6 @@ const MSG_BIENVENIDA = {
   text: 'Hola, soy Monedita. Decime qué gastaste y lo anoto por vos. Ej: "2000 de café" o "cobré 500000 de trabajo". También podés preguntarme "¿cómo voy este mes?" 📊',
 }
 
-
 export default function ChatbotPage() {
   const { user } = useAuth()
   const { categorias, crearCategoria } = useCategorias()
@@ -49,37 +48,30 @@ export default function ChatbotPage() {
   const [input, setInput]       = useState('')
   const [guardando, setGuardando] = useState(false)
   const [dicPersonal, setDicPersonal] = useState({})
-  const [chatBarVisible, setChatBarVisible] = useState(true)
-  const bottomRef = useRef(null)
-  const inputBarRef = useRef(null)
-  const blurTimerRef = useRef(null)
+  const chatRef    = useRef(null)
+  const messagesRef = useRef(null)
 
-  function handleCardFocus() {
-    clearTimeout(blurTimerRef.current)
-    setChatBarVisible(false)
-  }
-
-  function handleCardBlur() {
-    // Timeout para evitar flash si el foco pasa de un input al otro dentro de la card
-    blurTimerRef.current = setTimeout(() => setChatBarVisible(true), 150)
-  }
-
-  const NAV_BOTTOM = 'calc(4rem + env(safe-area-inset-bottom, 0px))'
-
+  // El contenedor fixed ajusta su bottom según la altura del teclado.
+  // Esto hace que el input siempre quede pegado encima del teclado (estilo WhatsApp).
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
+
     function update() {
-      if (!inputBarRef.current) return
-      const keyboardH = window.innerHeight - vv.height - vv.offsetTop
-      if (keyboardH > 80) {
-        inputBarRef.current.style.bottom = `${keyboardH}px`
-        // Scroll al último mensaje para que el botón Guardar quede visible sobre el teclado
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
-      } else {
-        inputBarRef.current.style.bottom = NAV_BOTTOM
+      if (!chatRef.current) return
+      const keyboardH = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
+      chatRef.current.style.bottom = keyboardH > 120
+        ? `${keyboardH}px`
+        : `calc(64px + env(safe-area-inset-bottom, 0px))`
+
+      if (keyboardH > 120 && messagesRef.current) {
+        setTimeout(() => {
+          if (messagesRef.current)
+            messagesRef.current.scrollTop = messagesRef.current.scrollHeight
+        }, 50)
       }
     }
+
     vv.addEventListener('resize', update)
     vv.addEventListener('scroll', update)
     return () => {
@@ -88,7 +80,13 @@ export default function ChatbotPage() {
     }
   }, [])
 
-  // Cargar diccionario personal del usuario
+  // Scroll al último mensaje cada vez que llega uno nuevo
+  useEffect(() => {
+    if (messagesRef.current)
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight
+  }, [mensajes])
+
+  // Diccionario personal del usuario
   useEffect(() => {
     if (categorias.length === 0) return
     async function fetchDic() {
@@ -105,10 +103,6 @@ export default function ChatbotPage() {
     }
     fetchDic()
   }, [categorias])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [mensajes])
 
   function addMsg(msg) {
     setMensajes(prev => [...prev, { id: Date.now() + Math.random(), ...msg }])
@@ -127,11 +121,7 @@ export default function ChatbotPage() {
     const resultado = parsearMensaje(texto, dicPersonal)
     const { tipo, monto, categoria: catNombre, esConsulta } = resultado
 
-    // Consulta de resumen del mes
-    if (esConsulta) {
-      await responderConsulta()
-      return
-    }
+    if (esConsulta) { await responderConsulta(); return }
 
     if (!tipo && !monto) {
       addMsg({ from: 'bot', tipo: 'texto',
@@ -151,7 +141,6 @@ export default function ChatbotPage() {
 
     const catsDelTipo = categorias.filter(c => c.tipo === tipo && c.activa)
     const catEncontrada = matchCategoria(catNombre, catsDelTipo)
-
     addMsg({
       from: 'bot',
       tipo: 'confirmacion',
@@ -179,7 +168,6 @@ export default function ChatbotPage() {
     const ahorro   = data.filter(mv => mv.tipo === 'ahorro').reduce((s, mv) => s + mv.monto, 0)
     const balance  = ingresos - gastos - ahorro
 
-    // Top 3 categorías de gasto
     const porCat = data.filter(mv => mv.tipo === 'gasto').reduce((acc, mv) => {
       const key = mv.categorias?.nombre ?? 'Otros'
       const emoji = mv.categorias?.emoji ?? '📦'
@@ -193,11 +181,9 @@ export default function ChatbotPage() {
       .map(([nombre, { emoji, total }]) => `  ${emoji} ${nombre}: ${formatARS(total)}`)
       .join('\n')
 
-    const balanceSign = balance >= 0 ? '✅' : '⚠️'
-
     addMsg({
       from: 'bot', tipo: 'texto',
-      text: `📊 *Resumen del mes*\n\n💚 Ingresos: ${formatARS(ingresos)}\n🔴 Gastos: ${formatARS(gastos)}\n💜 Ahorro: ${formatARS(ahorro)}\n${balanceSign} Balance: ${formatARS(balance)}${topCats ? `\n\n🔝 Top gastos:\n${topCats}` : ''}`,
+      text: `📊 *Resumen del mes*\n\n💚 Ingresos: ${formatARS(ingresos)}\n🔴 Gastos: ${formatARS(gastos)}\n💜 Ahorro: ${formatARS(ahorro)}\n${balance >= 0 ? '✅' : '⚠️'} Balance: ${formatARS(balance)}${topCats ? `\n\n🔝 Top gastos:\n${topCats}` : ''}`,
     })
   }
 
@@ -231,9 +217,22 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="page-enter flex flex-col flex-1 min-h-0">
-      {/* Header — fijo arriba */}
-      <div className="px-4 md:px-6 pt-4 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid #1f1f23' }}>
+    /*
+     * Contenedor fixed que se ancla entre el header de Mis Numeritos (top)
+     * y el BottomNav (bottom). El visualViewport listener ajusta el bottom
+     * cuando el teclado aparece, logrando el efecto tipo WhatsApp.
+     */
+    <div
+      ref={chatRef}
+      className="fixed left-0 right-0 z-10 flex flex-col bg-zinc-950"
+      style={{
+        top:    'calc(44px + env(safe-area-inset-top, 0px))',
+        bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+      }}
+    >
+      {/* Header Monedita — siempre fijo arriba del chat */}
+      <div className="flex-shrink-0 px-4 md:px-6 pt-4 pb-3"
+           style={{ borderBottom: '1px solid #1f1f23' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0"
                style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.25)' }}>
@@ -249,8 +248,11 @@ export default function ChatbotPage() {
         </div>
       </div>
 
-      {/* Mensajes — único área scrolleable */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4 pb-52 overscroll-contain">
+      {/* Mensajes — única zona scrolleable, contenida */}
+      <div
+        ref={messagesRef}
+        className="flex-1 overflow-y-auto overscroll-contain px-4 md:px-6 py-4 space-y-4"
+      >
         {mensajes.map(m => (
           <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.from === 'bot' && (
@@ -260,10 +262,9 @@ export default function ChatbotPage() {
               </div>
             )}
             {m.tipo === 'texto' && (
-              <div className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-line
-                ${m.from === 'user'
-                  ? 'text-white'
-                  : 'text-zinc-200'}`}
+              <div
+                className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-line
+                  ${m.from === 'user' ? 'text-white' : 'text-zinc-200'}`}
                 style={m.from === 'user'
                   ? { background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', borderRadius: '18px 18px 4px 18px' }
                   : { background: '#1c1c20', border: '1px solid #27272a', borderRadius: '18px 18px 18px 4px' }
@@ -273,57 +274,46 @@ export default function ChatbotPage() {
               </div>
             )}
             {m.tipo === 'confirmacion' && (
-              <div onFocus={handleCardFocus} onBlur={handleCardBlur}>
-                <ConfirmacionCard
-                  datos={m.datos}
-                  onConfirmar={handleConfirmar}
-                  onCancelar={handleCancelar}
-                  guardando={guardando}
-                  crearCategoria={crearCategoria}
-                />
-              </div>
+              <ConfirmacionCard
+                datos={m.datos}
+                onConfirmar={handleConfirmar}
+                onCancelar={handleCancelar}
+                guardando={guardando}
+                crearCategoria={crearCategoria}
+              />
             )}
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
 
-      {/* Input bar — fixed, sube con el teclado. Se oculta cuando el foco está en la card */}
-      <div
-        ref={inputBarRef}
-        className={`fixed left-0 right-0 z-30 bg-zinc-950/98 backdrop-blur-sm border-t border-zinc-800
-                    transition-opacity duration-150
-                    ${chatBarVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        style={{ bottom: NAV_BOTTOM }}
-      >
-        {/* Input */}
-        <div className="px-4 pb-3">
-          <form onSubmit={handleSend} className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="gasté 3500 en uber..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              className="flex-1 text-zinc-100 placeholder-zinc-500 outline-none text-sm"
-              style={{
-                background: '#161619',
-                border: '1px solid #27272a',
-                borderRadius: '24px',
-                padding: '10px 16px',
-              }}
-              autoComplete="off"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || guardando}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-                         transition-all active:scale-90 disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' }}
-            >
-              <span className="text-white text-sm">➤</span>
-            </button>
-          </form>
-        </div>
+      {/* Input — en flujo normal, siempre visible al fondo del contenedor */}
+      <div className="flex-shrink-0 px-4 pt-2 pb-3 bg-zinc-950"
+           style={{ borderTop: '1px solid #1f1f23' }}>
+        <form onSubmit={handleSend} className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="gasté 3500 en uber..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            className="flex-1 text-zinc-100 placeholder-zinc-500 outline-none text-sm"
+            style={{
+              background: '#161619',
+              border: '1px solid #27272a',
+              borderRadius: '24px',
+              padding: '10px 16px',
+            }}
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || guardando}
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                       transition-all active:scale-90 disabled:opacity-40"
+            style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' }}
+          >
+            <span className="text-white text-sm">➤</span>
+          </button>
+        </form>
       </div>
     </div>
   )
@@ -336,7 +326,6 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
   const [montoStr, setMontoStr] = useState(String(datosProp.monto))
   const [confirmado, setConfirmado] = useState(false)
 
-  // Mini-form nueva categoría
   const [creandoCat, setCreandoCat] = useState(false)
   const [nuevaEmoji, setNuevaEmoji] = useState('📦')
   const [nuevaNombre, setNuevaNombre] = useState('')
@@ -369,7 +358,6 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
       setGuardandoCat(false)
       return
     }
-    // Fetch la nueva categoría para obtener su id
     const { data } = await supabase
       .from('categorias')
       .select('*')
@@ -411,9 +399,11 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
               />
             </div>
           ) : (
-            <button onClick={() => { setMontoStr(String(datos.monto)); setEditandoMonto(true) }}
+            <button
+              onClick={() => { setMontoStr(String(datos.monto)); setEditandoMonto(true) }}
               disabled={confirmado}
-              className="text-lg font-bold text-zinc-100 hover:text-violet-300 transition-colors disabled:pointer-events-none">
+              className="text-lg font-bold text-zinc-100 hover:text-violet-300 transition-colors disabled:pointer-events-none"
+            >
               {formatARS(datos.monto)}
             </button>
           )}
@@ -449,12 +439,9 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
             )}
           </div>
 
-          {/* Mini-form nueva categoría */}
           {creandoCat && (
             <div className="mt-2 p-3 rounded-xl bg-zinc-900 border border-zinc-700 space-y-2">
               <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">Nueva categoría</p>
-
-              {/* Emojis rápidos */}
               <div className="flex flex-wrap gap-1.5">
                 {EMOJIS_RAPIDOS.map(e => (
                   <button key={e} type="button"
@@ -474,7 +461,6 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
                              text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
                 />
               </div>
-
               <input
                 autoFocus
                 type="text"
@@ -485,15 +471,15 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-100
                            placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
               />
-
               {errorCat && <p className="text-xs text-rose-400">{errorCat}</p>}
-
               <div className="flex gap-2">
-                <button onClick={() => { setCreandoCat(false); setNuevaNombre(''); setErrorCat('') }}
+                <button
+                  onClick={() => { setCreandoCat(false); setNuevaNombre(''); setErrorCat('') }}
                   className="flex-1 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-400 hover:border-zinc-600 transition-all">
                   Cancelar
                 </button>
-                <button onClick={handleCrearCat}
+                <button
+                  onClick={handleCrearCat}
                   disabled={!nuevaNombre.trim() || guardandoCat}
                   className="flex-1 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40
                              text-white text-xs font-semibold transition-all">
@@ -520,12 +506,14 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
 
         {!confirmado && (
           <div className="flex gap-2 pt-1">
-            <button onClick={cancelar}
+            <button
+              onClick={cancelar}
               className="flex-1 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-400
                          hover:border-zinc-600 text-sm font-medium transition-all">
               Cancelar
             </button>
-            <button onClick={guardar}
+            <button
+              onClick={guardar}
               disabled={!datos.categoria || guardando}
               className="flex-1 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40
                          text-white text-sm font-semibold transition-all">
