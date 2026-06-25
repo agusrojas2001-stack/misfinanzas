@@ -18,12 +18,18 @@ export default function BottomNav() {
     const vv = window.visualViewport
     if (!vv || !navRef.current) return
 
-    navRef.current.style.transition = 'transform 0.15s ease'
-
     function update() {
       if (!navRef.current) return
       const keyboardH = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
-      navRef.current.style.transform = keyboardH > 120 ? 'translateY(100%)' : ''
+      if (keyboardH > 120) {
+        // Teclado abierto: ocultá instantáneamente, sin animación
+        navRef.current.style.transition = 'none'
+        navRef.current.style.transform = 'translateY(100%)'
+      } else {
+        // Teclado cerrado: reaparecé con una transición corta
+        navRef.current.style.transition = 'transform 0.12s ease'
+        navRef.current.style.transform = ''
+      }
     }
 
     vv.addEventListener('resize', update)
