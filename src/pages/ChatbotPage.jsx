@@ -49,36 +49,41 @@ export default function ChatbotPage() {
   const [guardando, setGuardando] = useState(false)
   const [dicPersonal, setDicPersonal] = useState({})
   const chatRef    = useRef(null)
+  const innerRef   = useRef(null)
   const messagesRef = useRef(null)
+  const navHeightPx = useRef(64)
 
-  // El contenedor fixed ajusta su bottom según la altura del teclado.
-  // Esto hace que el input siempre quede pegado encima del teclado (estilo WhatsApp).
+  // Mueve el contenido interno con translateY cuando abre el teclado.
+  // El contenedor fixed NUNCA cambia su bottom → el BottomNav no se ve afectado.
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
 
+    // Leemos el bottom real del contenedor (incluye safe-area-inset-bottom)
+    if (chatRef.current) {
+      const computed = parseFloat(getComputedStyle(chatRef.current).bottom)
+      if (!isNaN(computed)) navHeightPx.current = computed
+    }
+
     function update() {
-      if (!chatRef.current) return
-      // Ignoramos vv.offsetTop para evitar valores erróneos cuando iOS scrollea
-      // el viewport durante la animación de cierre del teclado.
+      if (!innerRef.current) return
       const keyboardH = Math.max(0, window.innerHeight - vv.height)
       if (keyboardH > 120) {
-        chatRef.current.style.transition = 'none'
-        chatRef.current.style.bottom = `${keyboardH}px`
+        const shift = Math.max(0, keyboardH - navHeightPx.current)
+        innerRef.current.style.transition = 'none'
+        innerRef.current.style.transform = `translateY(-${shift}px)`
         setTimeout(() => {
           if (messagesRef.current)
             messagesRef.current.scrollTop = messagesRef.current.scrollHeight
         }, 50)
       } else {
-        chatRef.current.style.transition = 'bottom 0.22s ease'
-        chatRef.current.style.bottom = `calc(64px + env(safe-area-inset-bottom, 0px))`
+        innerRef.current.style.transition = 'transform 0.22s ease'
+        innerRef.current.style.transform = 'translateY(0)'
       }
     }
 
     vv.addEventListener('resize', update)
-    return () => {
-      vv.removeEventListener('resize', update)
-    }
+    return () => vv.removeEventListener('resize', update)
   }, [])
 
   // Scroll al último mensaje cada vez que llega uno nuevo
@@ -218,103 +223,107 @@ export default function ChatbotPage() {
   }
 
   return (
-    /*
-     * Contenedor fixed que se ancla entre el header de Mis Numeritos (top)
-     * y el BottomNav (bottom). El visualViewport listener ajusta el bottom
-     * cuando el teclado aparece, logrando el efecto tipo WhatsApp.
-     */
     <div
       ref={chatRef}
-      className="fixed left-0 right-0 z-10 flex flex-col bg-zinc-950"
+      className="fixed left-0 right-0 z-10 bg-zinc-950 overflow-hidden"
       style={{
         top:    'calc(44px + env(safe-area-inset-top, 0px))',
         bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Header Monedita — siempre fijo arriba del chat */}
-      <div className="flex-shrink-0 px-4 md:px-6 pt-4 pb-3"
-           style={{ borderBottom: '1px solid #1f1f23' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0"
-               style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.25)' }}>
-            <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-zinc-100 leading-tight">Monedita</h1>
-            <p className="text-xs flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--mn-income)' }} />
-              <span style={{ color: 'var(--mn-income)' }}>en línea</span>
-            </p>
+      <div ref={innerRef} className="flex flex-col h-full">
+
+        <div
+          className="flex-shrink-0 px-4 md:px-6 pt-4 pb-3"
+          style={{ borderBottom: '1px solid #1f1f23' }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0"
+              style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.25)' }}
+            >
+              <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-zinc-100 leading-tight">Monedita</h1>
+              <p className="text-xs flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--mn-income)' }} />
+                <span style={{ color: 'var(--mn-income)' }}>en línea</span>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Mensajes — única zona scrolleable, contenida */}
-      <div
-        ref={messagesRef}
-        className="flex-1 overflow-y-auto overscroll-contain px-4 md:px-6 py-4 space-y-4"
-      >
-        {mensajes.map(m => (
-          <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {m.from === 'bot' && (
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-auto"
-                   style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.2)' }}>
-                <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
-              </div>
-            )}
-            {m.tipo === 'texto' && (
-              <div
-                className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-line
-                  ${m.from === 'user' ? 'text-white' : 'text-zinc-200'}`}
-                style={m.from === 'user'
-                  ? { background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', borderRadius: '18px 18px 4px 18px' }
-                  : { background: '#1c1c20', border: '1px solid #27272a', borderRadius: '18px 18px 18px 4px' }
-                }
-              >
-                {m.text}
-              </div>
-            )}
-            {m.tipo === 'confirmacion' && (
-              <ConfirmacionCard
-                datos={m.datos}
-                onConfirmar={handleConfirmar}
-                onCancelar={handleCancelar}
-                guardando={guardando}
-                crearCategoria={crearCategoria}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+        <div
+          ref={messagesRef}
+          className="flex-1 overflow-y-auto overscroll-contain px-4 md:px-6 py-4 space-y-4"
+        >
+          {mensajes.map(m => (
+            <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {m.from === 'bot' && (
+                <div
+                  className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-auto"
+                  style={{ background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.2)' }}
+                >
+                  <img src="/monedita/monedita-contenta.svg" alt="Monedita" className="w-full h-full object-contain" />
+                </div>
+              )}
+              {m.tipo === 'texto' && (
+                <div
+                  className={`max-w-[80%] px-4 py-3 text-sm leading-relaxed whitespace-pre-line
+                    ${m.from === 'user' ? 'text-white' : 'text-zinc-200'}`}
+                  style={m.from === 'user'
+                    ? { background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', borderRadius: '18px 18px 4px 18px' }
+                    : { background: '#1c1c20', border: '1px solid #27272a', borderRadius: '18px 18px 18px 4px' }
+                  }
+                >
+                  {m.text}
+                </div>
+              )}
+              {m.tipo === 'confirmacion' && (
+                <ConfirmacionCard
+                  datos={m.datos}
+                  onConfirmar={handleConfirmar}
+                  onCancelar={handleCancelar}
+                  guardando={guardando}
+                  crearCategoria={crearCategoria}
+                />
+              )}
+            </div>
+          ))}
+        </div>
 
-      {/* Input — en flujo normal, siempre visible al fondo del contenedor */}
-      <div className="flex-shrink-0 px-4 pt-2 pb-3 bg-zinc-950"
-           style={{ borderTop: '1px solid #1f1f23' }}>
-        <form onSubmit={handleSend} className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="gasté 3500 en uber..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            className="flex-1 text-zinc-100 placeholder-zinc-500 outline-none text-sm"
-            style={{
-              background: '#161619',
-              border: '1px solid #27272a',
-              borderRadius: '24px',
-              padding: '10px 16px',
-            }}
-            autoComplete="off"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || guardando}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-                       transition-all active:scale-90 disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' }}
-          >
-            <span className="text-white text-sm">➤</span>
-          </button>
-        </form>
+        <div
+          className="flex-shrink-0 px-4 pt-2 pb-3 bg-zinc-950"
+          style={{ borderTop: '1px solid #1f1f23' }}
+        >
+          <form onSubmit={handleSend} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="gasté 3500 en uber..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              className="flex-1 text-zinc-100 placeholder-zinc-500 outline-none text-sm"
+              style={{
+                background: '#161619',
+                border: '1px solid #27272a',
+                borderRadius: '24px',
+                padding: '10px 16px',
+              }}
+              autoComplete="off"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || guardando}
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                         transition-all active:scale-90 disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' }}
+            >
+              <span className="text-white text-sm">➤</span>
+            </button>
+          </form>
+        </div>
+
       </div>
     </div>
   )
