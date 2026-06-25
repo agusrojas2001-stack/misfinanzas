@@ -41,11 +41,6 @@ const MSG_BIENVENIDA = {
   text: 'Hola, soy Monedita. Decime qué gastaste y lo anoto por vos. Ej: "2000 de café" o "cobré 500000 de trabajo". También podés preguntarme "¿cómo voy este mes?" 📊',
 }
 
-const CHIPS_RAPIDOS = [
-  { label: '💸 Gasto',   prefijo: 'gasté '   },
-  { label: '💰 Ingreso', prefijo: 'cobré '   },
-  { label: '💎 Ahorro',  prefijo: 'ahorré '  },
-]
 
 export default function ChatbotPage() {
   const { user } = useAuth()
@@ -301,16 +296,6 @@ export default function ChatbotPage() {
                     ${chatBarVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         style={{ bottom: NAV_BOTTOM }}
       >
-        {/* Chips */}
-        <div className="px-4 pt-2 pb-1 flex gap-2">
-          {CHIPS_RAPIDOS.map(chip => (
-            <button key={chip.prefijo}
-              onClick={() => setInput(chip.prefijo)}
-              className="text-xs px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-300 transition-all">
-              {chip.label}
-            </button>
-          ))}
-        </div>
         {/* Input */}
         <div className="px-4 pb-3">
           <form onSubmit={handleSend} className="flex items-center gap-2">
