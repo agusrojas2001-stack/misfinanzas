@@ -1,4 +1,3 @@
-import { useRef, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Home, MessageCircle, Target, Wallet, TrendingUp } from 'lucide-react'
 
@@ -12,40 +11,9 @@ const tabs = [
 
 export default function BottomNav() {
   const location = useLocation()
-  const navRef = useRef(null)
-
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv || !navRef.current) return
-
-    function update() {
-      if (!navRef.current) return
-      const keyboardH = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
-      if (keyboardH > 120) {
-        // Teclado abierto: ocultá instantáneamente, sin animación
-        navRef.current.style.transition = 'none'
-        navRef.current.style.transform = 'translateY(100%)'
-      } else {
-        // Teclado cerrado: reaparecé con una transición corta
-        navRef.current.style.transition = 'transform 0.12s ease'
-        navRef.current.style.transform = ''
-      }
-    }
-
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
-    return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
-      if (navRef.current) {
-        navRef.current.style.transform = ''
-        navRef.current.style.transition = ''
-      }
-    }
-  }, [])
 
   return (
-    <nav ref={navRef} className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
          style={{ background: 'rgba(24,24,27,0.96)', borderTop: '1px solid #1f1f23', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center justify-around h-16 max-w-4xl mx-auto px-2">
         {tabs.map(({ to, label, Icon }) => {
