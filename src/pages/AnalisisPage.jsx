@@ -307,9 +307,9 @@ export default function AnalisisPage() {
               { label: 'Ahorro',   val: totalAhorro,   color: 'text-violet-400'  },
               { label: 'Balance',  val: balance,       color: balance >= 0 ? 'text-emerald-400' : 'text-rose-400' },
             ].map(({ label, val, color }) => (
-              <div key={label} className="card py-3 px-2 text-center">
+              <div key={label} className="card py-3 px-2 text-center overflow-hidden">
                 <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">{label}</p>
-                <p className={`text-xs font-extrabold font-num ${color} leading-tight`}>
+                <p className={`text-[10px] sm:text-xs font-extrabold font-num ${color} leading-tight whitespace-nowrap tracking-tight tabular-nums`}>
                   {formatARS(val)}
                 </p>
               </div>
