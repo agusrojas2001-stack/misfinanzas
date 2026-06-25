@@ -51,6 +51,19 @@ export default function ChatbotPage() {
   const chatRef    = useRef(null)
   const messagesRef = useRef(null)
 
+  // Bloquea el scroll del body mientras el chat está montado.
+  // Evita que iOS Safari haga rubber-band scroll y mueva el header global.
+  useEffect(() => {
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+    document.body.style.height = '100%'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.width = ''
+      document.body.style.height = ''
+    }
+  }, [])
+
   // El contenedor fixed ajusta su bottom según la altura del teclado.
   // Esto hace que el input siempre quede pegado encima del teclado (estilo WhatsApp).
   useEffect(() => {

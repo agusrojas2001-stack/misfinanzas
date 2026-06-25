@@ -15,23 +15,27 @@ export default function BottomNav() {
   const navRef = useRef(null)
 
   useEffect(() => {
-    let baseH = window.innerHeight
-    let baseW = window.innerWidth
+    const vv = window.visualViewport
+    if (!vv || !navRef.current) return
 
-    function handleResize() {
+    navRef.current.style.transition = 'transform 0.15s ease'
+
+    function update() {
       if (!navRef.current) return
-      if (Math.abs(window.innerWidth - baseW) > 100) {
-        baseH = window.innerHeight
-        baseW = window.innerWidth
-        navRef.current.style.transform = ''
-        return
-      }
-      const correction = Math.max(0, baseH - window.innerHeight)
-      navRef.current.style.transform = correction > 120 ? `translateY(${correction}px)` : ''
+      const keyboardH = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
+      navRef.current.style.transform = keyboardH > 120 ? 'translateY(100%)' : ''
     }
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      if (navRef.current) {
+        navRef.current.style.transform = ''
+        navRef.current.style.transition = ''
+      }
+    }
   }, [])
 
   return (
