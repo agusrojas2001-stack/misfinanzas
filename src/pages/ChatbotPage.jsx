@@ -250,7 +250,7 @@ export default function ChatbotPage() {
       </div>
 
       {/* Mensajes — único área scrolleable */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4 pb-52">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4 pb-52 overscroll-contain">
         {mensajes.map(m => (
           <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.from === 'bot' && (

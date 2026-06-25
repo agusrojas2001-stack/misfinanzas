@@ -93,7 +93,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className="bg-zinc-950 flex flex-col overflow-hidden h-screen" style={{ height: '100dvh' }}>
 
       {/* Backdrop menú */}
       {drawerOpen && (

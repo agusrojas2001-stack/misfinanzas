@@ -214,7 +214,7 @@ export default function MetasPage() {
                     className="rounded-xl px-3 py-2.5 flex items-center justify-between gap-2"
                     style={{ background: 'rgba(39,39,42,.6)' }}
                   >
-                    <span className="text-sm text-zinc-400">Para llegar en fecha, ahorrá</span>
+                    <span className="text-xs text-zinc-400">Para llegar en fecha, ahorrá</span>
                     <span className="font-num font-extrabold text-violet-400 flex-shrink-0 whitespace-nowrap">
                       {formatARS(porMes)}/mes
                     </span>
