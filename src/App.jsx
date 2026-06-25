@@ -18,9 +18,13 @@ import OnboardingPage from './pages/OnboardingPage'
 function LoadingScreen() {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-4 animate-bounce">💸</div>
-        <p className="text-zinc-500 text-sm">Cargando...</p>
+      <div className="flex flex-col items-center gap-3">
+        <img
+          src="/monedita/monedita-tranqui.svg"
+          alt="Cargando..."
+          className="w-16 h-16 object-contain animate-bounce"
+        />
+        <p className="text-sm font-normal text-zinc-500">Cargando tus numeritos...</p>
       </div>
     </div>
   )
