@@ -59,24 +59,25 @@ export default function ChatbotPage() {
 
     function update() {
       if (!chatRef.current) return
-      const keyboardH = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
-      chatRef.current.style.bottom = keyboardH > 120
-        ? `${keyboardH}px`
-        : `calc(64px + env(safe-area-inset-bottom, 0px))`
-
-      if (keyboardH > 120 && messagesRef.current) {
+      // Ignoramos vv.offsetTop para evitar valores erróneos cuando iOS scrollea
+      // el viewport durante la animación de cierre del teclado.
+      const keyboardH = Math.max(0, window.innerHeight - vv.height)
+      if (keyboardH > 120) {
+        chatRef.current.style.transition = 'none'
+        chatRef.current.style.bottom = `${keyboardH}px`
         setTimeout(() => {
           if (messagesRef.current)
             messagesRef.current.scrollTop = messagesRef.current.scrollHeight
         }, 50)
+      } else {
+        chatRef.current.style.transition = 'bottom 0.22s ease'
+        chatRef.current.style.bottom = `calc(64px + env(safe-area-inset-bottom, 0px))`
       }
     }
 
     vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
     return () => {
       vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
     }
   }, [])
 
