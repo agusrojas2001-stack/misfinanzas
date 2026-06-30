@@ -58,14 +58,34 @@ export default function Layout() {
       syncShell()
     }
 
+    // En iOS el resize final al cerrar teclado en modales no llega o llega
+    // con valor viejo; releer el viewport 200ms después de que cualquier input
+    // pierda foco garantiza que el shell quede en la posición correcta.
+    function onFocusOut() { setTimeout(syncShell, 200) }
+
     syncShell()
     vv.addEventListener('resize', onVvResize)
     vv.addEventListener('scroll', syncShell)
+    document.addEventListener('focusout', onFocusOut)
     return () => {
       vv.removeEventListener('resize', onVvResize)
       vv.removeEventListener('scroll', syncShell)
+      document.removeEventListener('focusout', onFocusOut)
     }
   }, [])
+
+  // Doble seguro: cuando keyboardOpen vuelve a false, forzamos un
+  // resync tardío por si el resize del viewport llegó con valor viejo.
+  useEffect(() => {
+    if (keyboardOpen) return
+    const t = setTimeout(() => {
+      const vv = window.visualViewport
+      if (!vv) return
+      document.documentElement.style.setProperty('--vv-height', vv.height + 'px')
+      document.documentElement.style.setProperty('--vv-top', vv.offsetTop + 'px')
+    }, 200)
+    return () => clearTimeout(t)
+  }, [keyboardOpen])
 
   useEffect(() => {
     if (!user) return
