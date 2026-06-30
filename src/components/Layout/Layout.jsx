@@ -7,6 +7,7 @@ import { useNotificaciones } from '../../hooks/useNotificaciones'
 import { evaluarReglas, procesarRecordatorios } from '../../lib/evaluarReglas'
 import NotifPanel from '../Notifications/NotifPanel'
 import PushPermiso from '../Notifications/PushPermiso'
+import { KeyboardContext } from '../../contexts/KeyboardContext'
 
 const NAV_ITEMS = [
   { path: '/',            label: 'Inicio',      Icon: Home          },
@@ -27,6 +28,30 @@ export default function Layout() {
   const touchStart = useRef(null)
 
   const { notificaciones, noLeidas, marcarLeida, marcarTodasLeidas, eliminar: eliminarNotif, refetch: refetchNotifs } = useNotificaciones()
+
+  // ── Keyboard detection (single source of truth) ──────────────
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const baseVvH = useRef(null)
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    baseVvH.current = vv.height
+
+    function onVvResize() {
+      const diff = baseVvH.current - vv.height
+      if (diff > 100) {
+        setKeyboardOpen(true)
+      } else {
+        // Allow baseline to grow (handles orientation changes)
+        if (vv.height > baseVvH.current) baseVvH.current = vv.height
+        setKeyboardOpen(false)
+      }
+    }
+
+    vv.addEventListener('resize', onVvResize)
+    return () => vv.removeEventListener('resize', onVvResize)
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -93,6 +118,7 @@ export default function Layout() {
   }
 
   return (
+    <KeyboardContext.Provider value={keyboardOpen}>
     <div className="bg-zinc-950 flex flex-col overflow-hidden h-screen" style={{ height: '100dvh' }}>
 
       {/* Backdrop menú */}
@@ -280,7 +306,7 @@ export default function Layout() {
       <main
         className={isChatbot
           ? 'flex-1 overflow-hidden flex flex-col min-h-0'
-          : 'flex-1 overflow-y-auto pb-24'
+          : `flex-1 overflow-y-auto ${keyboardOpen ? 'pb-2' : 'pb-24'}`
         }
         style={isChatbot ? undefined : { paddingTop: 'calc(44px + env(safe-area-inset-top, 0px))' }}
       >
@@ -292,8 +318,9 @@ export default function Layout() {
         </div>
       </main>
 
-      <BottomNav />
+      {!keyboardOpen && <BottomNav />}
       <PushPermiso />
     </div>
+    </KeyboardContext.Provider>
   )
 }

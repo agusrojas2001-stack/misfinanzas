@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCategorias } from '../hooks/useCategorias'
 import { parsearMensaje, formatARS } from '../lib/parser'
+import { useKeyboard } from '../contexts/KeyboardContext'
 
 const EMOJIS_RAPIDOS = ['🛒','🍔','🚗','🏠','💊','📱','🎮','👕','✈️','🐾','📚','🎵','💇','🏋️','🎁']
 
@@ -44,47 +45,12 @@ const MSG_BIENVENIDA = {
 export default function ChatbotPage() {
   const { user } = useAuth()
   const { categorias, crearCategoria } = useCategorias()
+  const keyboardOpen = useKeyboard()
   const [mensajes, setMensajes] = useState([MSG_BIENVENIDA])
   const [input, setInput]       = useState('')
   const [guardando, setGuardando] = useState(false)
   const [dicPersonal, setDicPersonal] = useState({})
-  const chatRef    = useRef(null)
-  const innerRef   = useRef(null)
   const messagesRef = useRef(null)
-  const navHeightPx = useRef(64)
-
-  // Mueve el contenido interno con translateY cuando abre el teclado.
-  // El contenedor fixed NUNCA cambia su bottom → el BottomNav no se ve afectado.
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-
-    // Leemos el bottom real del contenedor (incluye safe-area-inset-bottom)
-    if (chatRef.current) {
-      const computed = parseFloat(getComputedStyle(chatRef.current).bottom)
-      if (!isNaN(computed)) navHeightPx.current = computed
-    }
-
-    function update() {
-      if (!innerRef.current) return
-      const keyboardH = Math.max(0, window.innerHeight - vv.height)
-      if (keyboardH > 120) {
-        const shift = Math.max(0, keyboardH - navHeightPx.current)
-        innerRef.current.style.transition = 'none'
-        innerRef.current.style.transform = `translateY(-${shift}px)`
-        setTimeout(() => {
-          if (messagesRef.current)
-            messagesRef.current.scrollTop = messagesRef.current.scrollHeight
-        }, 50)
-      } else {
-        innerRef.current.style.transition = 'transform 0.22s ease'
-        innerRef.current.style.transform = 'translateY(0)'
-      }
-    }
-
-    vv.addEventListener('resize', update)
-    return () => vv.removeEventListener('resize', update)
-  }, [])
 
   // Scroll al último mensaje cada vez que llega uno nuevo
   useEffect(() => {
@@ -224,14 +190,13 @@ export default function ChatbotPage() {
 
   return (
     <div
-      ref={chatRef}
       className="fixed left-0 right-0 z-10 bg-zinc-950 overflow-hidden"
       style={{
         top:    'calc(44px + env(safe-area-inset-top, 0px))',
-        bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+        bottom: keyboardOpen ? '0' : 'calc(64px + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      <div ref={innerRef} className="flex flex-col h-full">
+      <div className="flex flex-col h-full">
 
         <div
           className="flex-shrink-0 px-4 md:px-6 pt-4 pb-3"
