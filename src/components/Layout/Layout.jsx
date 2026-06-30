@@ -37,9 +37,11 @@ export default function Layout() {
     const vv = window.visualViewport
     if (!vv) return
     baseVvH.current = vv.height
+    console.log('[KB-INIT] innerHeight:', window.innerHeight, '| vv.height:', vv.height, '| vv.offsetTop:', vv.offsetTop)
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
+      console.log('[KB-RESIZE] innerHeight:', window.innerHeight, '| vv.height:', vv.height, '| vv.offsetTop:', vv.offsetTop, '| diff:', diff, '| keyboardOpen:', diff > 100)
       if (diff > 100) {
         setKeyboardOpen(true)
       } else {
