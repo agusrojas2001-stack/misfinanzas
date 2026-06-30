@@ -58,6 +58,12 @@ export default function ChatbotPage() {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [mensajes])
 
+  // Scroll al fondo cuando abre el teclado
+  useEffect(() => {
+    if (keyboardOpen && messagesRef.current)
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight
+  }, [keyboardOpen])
+
   // Diccionario personal del usuario
   useEffect(() => {
     if (categorias.length === 0) return
@@ -221,8 +227,9 @@ export default function ChatbotPage() {
 
         <div
           ref={messagesRef}
-          className="flex-1 overflow-y-auto overscroll-contain px-4 md:px-6 py-4 space-y-4"
+          className="flex-1 overflow-y-auto overscroll-contain"
         >
+          <div className="flex flex-col justify-end min-h-full px-4 md:px-6 py-4 space-y-4">
           {mensajes.map(m => (
             <div key={m.id} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.from === 'bot' && (
@@ -256,6 +263,7 @@ export default function ChatbotPage() {
               )}
             </div>
           ))}
+          </div>
         </div>
 
         <div

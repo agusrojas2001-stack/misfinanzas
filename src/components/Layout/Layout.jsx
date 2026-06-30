@@ -306,9 +306,15 @@ export default function Layout() {
       <main
         className={isChatbot
           ? 'flex-1 overflow-hidden flex flex-col min-h-0'
-          : `flex-1 overflow-y-auto ${keyboardOpen ? 'pb-2' : 'pb-24'}`
+          : 'flex-1 overflow-y-auto pb-24'
         }
         style={isChatbot ? undefined : { paddingTop: 'calc(44px + env(safe-area-inset-top, 0px))' }}
+        onFocus={(e) => {
+          const el = e.target
+          if (!['INPUT', 'TEXTAREA'].includes(el.tagName)) return
+          if (['number', 'date', 'time', 'range'].includes(el.type)) return
+          setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 350)
+        }}
       >
         <div className={isChatbot
           ? 'flex-1 flex flex-col min-h-0 max-w-4xl w-full mx-auto'
