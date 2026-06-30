@@ -37,22 +37,34 @@ export default function Layout() {
     const vv = window.visualViewport
     if (!vv) return
     baseVvH.current = vv.height
-    console.log('[KB-INIT] innerHeight:', window.innerHeight, '| vv.height:', vv.height, '| vv.offsetTop:', vv.offsetTop)
+
+    // Mueve el shell para que siga al viewport visible en iOS standalone
+    // (iOS empuja el contenido con offsetTop en vez de achicar el viewport)
+    function syncShell() {
+      requestAnimationFrame(() => {
+        document.documentElement.style.setProperty('--vv-height', vv.height + 'px')
+        document.documentElement.style.setProperty('--vv-top', vv.offsetTop + 'px')
+      })
+    }
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
-      console.log('[KB-RESIZE] innerHeight:', window.innerHeight, '| vv.height:', vv.height, '| vv.offsetTop:', vv.offsetTop, '| diff:', diff, '| keyboardOpen:', diff > 100)
       if (diff > 100) {
         setKeyboardOpen(true)
       } else {
-        // Allow baseline to grow (handles orientation changes)
         if (vv.height > baseVvH.current) baseVvH.current = vv.height
         setKeyboardOpen(false)
       }
+      syncShell()
     }
 
+    syncShell()
     vv.addEventListener('resize', onVvResize)
-    return () => vv.removeEventListener('resize', onVvResize)
+    vv.addEventListener('scroll', syncShell)
+    return () => {
+      vv.removeEventListener('resize', onVvResize)
+      vv.removeEventListener('scroll', syncShell)
+    }
   }, [])
 
   useEffect(() => {
@@ -121,7 +133,13 @@ export default function Layout() {
 
   return (
     <KeyboardContext.Provider value={keyboardOpen}>
-    <div className="bg-zinc-950 flex flex-col overflow-hidden h-screen" style={{ height: '100dvh' }}>
+    <div
+      className="bg-zinc-950 flex flex-col overflow-hidden"
+      style={{
+        height: 'var(--vv-height, 100dvh)',
+        transform: 'translateY(var(--vv-top, 0px))',
+      }}
+    >
 
       {/* Backdrop menú */}
       {drawerOpen && (
