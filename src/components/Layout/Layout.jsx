@@ -41,30 +41,34 @@ export default function Layout() {
 
     // Mueve el shell para que siga al viewport visible en iOS standalone
     // (iOS empuja el contenido con offsetTop en vez de achicar el viewport)
-    // skipTop=true: no tocar --vv-top (usado desde scroll/rubber-band donde
-    // offsetTop baila pero el teclado no cambió de verdad)
+    // skipTop: cuando el teclado está abierto y llega rubber-band (resize sin
+    // cambio de estado), no perseguimos el offsetTop que fluctúa.
+    // Sin teclado (diff <= 150): --vv-top SIEMPRE 0, ignoramos offsetTop sucio.
     function syncShell({ skipTop = false } = {}) {
       const h = vv.height
       const diff = baseVvH.current - h
-      const t = Math.max(0, vv.offsetTop)
-      const effectiveH = diff > 100 ? h : baseVvH.current
-      const chatBottom = diff > 100
+      const kbOpen = diff > 150
+      // Solo aplicamos offsetTop con teclado real Y sin rubber-band. En todos
+      // los demás casos (sin teclado o rubber-band con teclado) → 0.
+      const t = (kbOpen && !skipTop) ? Math.max(0, vv.offsetTop) : 0
+      const effectiveH = kbOpen ? h : baseVvH.current
+      const chatBottom = kbOpen
         ? '0px'
         : 'calc(64px + env(safe-area-inset-bottom, 0px))'
       requestAnimationFrame(() => {
         document.documentElement.style.setProperty('--vv-height', effectiveH + 'px')
-        if (!skipTop) document.documentElement.style.setProperty('--vv-top', t + 'px')
+        document.documentElement.style.setProperty('--vv-top', t + 'px')
         document.documentElement.style.setProperty('--chat-bottom', chatBottom)
-        console.log('[SYNC] raw:', h, 'effective:', effectiveH,
-          'top:', skipTop ? '(frozen)' : t, 'diff:', diff)
+        console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top:', t, 'diff:', diff,
+          kbOpen ? '(kb)' : '(no-kb)', skipTop ? '(skipTop)' : '')
         console.log('[CHAT-BOTTOM] syncShell→', chatBottom, '| diff:', diff)
       })
     }
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
-      const willOpen   = diff > 100
-      const wasOpen    = prevDiff.current > 100
+      const willOpen   = diff > 150
+      const wasOpen    = prevDiff.current > 150
       const stateChanged = willOpen !== wasOpen
       prevDiff.current = diff
 
