@@ -40,26 +40,22 @@ export default function Layout() {
 
     // Mueve el shell para que siga al viewport visible en iOS standalone
     // (iOS empuja el contenido con offsetTop en vez de achicar el viewport)
-    function syncShell() {
+    // skipTop=true: no tocar --vv-top (usado desde scroll/rubber-band donde
+    // offsetTop baila pero el teclado no cambió de verdad)
+    function syncShell({ skipTop = false } = {}) {
       const h = vv.height
       const diff = baseVvH.current - h
-      // Fix 1: clampear offsetTop — iOS rebota a negativos al cerrar teclado.
       const t = Math.max(0, vv.offsetTop)
-      // Fix 2: cuando el teclado está cerrado (diff<=100), usar la altura máxima
-      // conocida en lugar del valor intermedio que iOS reporta durante la animación
-      // (ej. 793 en lugar de 852). Cuando está abierto (diff>100), usar h real.
       const effectiveH = diff > 100 ? h : baseVvH.current
-      // Fix 3: --chat-bottom se actualiza en el mismo RAF que el shell para evitar
-      // el frame de hueco que ocurre cuando el shell ya tiene 449px pero React
-      // todavía no re-renderizó el bottom del contenedor del chat.
       const chatBottom = diff > 100
         ? '0px'
         : 'calc(64px + env(safe-area-inset-bottom, 0px))'
       requestAnimationFrame(() => {
         document.documentElement.style.setProperty('--vv-height', effectiveH + 'px')
-        document.documentElement.style.setProperty('--vv-top', t + 'px')
+        if (!skipTop) document.documentElement.style.setProperty('--vv-top', t + 'px')
         document.documentElement.style.setProperty('--chat-bottom', chatBottom)
-        console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top:', t, 'diff:', diff)
+        console.log('[SYNC] raw:', h, 'effective:', effectiveH,
+          'top:', skipTop ? '(frozen)' : t, 'diff:', diff)
         console.log('[CHAT-BOTTOM] syncShell→', chatBottom, '| diff:', diff)
       })
     }
@@ -85,7 +81,7 @@ export default function Layout() {
       const cs = getComputedStyle(document.documentElement)
       console.log('[VV-SCROLL] vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop,
         'diff:', diff, '--chat-bottom:', cs.getPropertyValue('--chat-bottom').trim())
-      syncShell()
+      syncShell({ skipTop: true })
     }
 
     syncShell()
