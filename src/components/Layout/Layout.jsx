@@ -60,6 +60,7 @@ export default function Layout() {
         document.documentElement.style.setProperty('--vv-top', t + 'px')
         document.documentElement.style.setProperty('--chat-bottom', chatBottom)
         console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top:', t, 'diff:', diff)
+        console.log('[CHAT-BOTTOM] syncShell→', chatBottom, '| diff:', diff)
       })
     }
 

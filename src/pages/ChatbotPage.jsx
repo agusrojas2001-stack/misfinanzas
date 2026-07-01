@@ -83,6 +83,9 @@ export default function ChatbotPage() {
 
   // Scroll al fondo cuando abre el teclado
   useEffect(() => {
+    const cs = getComputedStyle(document.documentElement)
+    console.log('[CHAT-BOTTOM] keyboardOpen cambió→', keyboardOpen,
+      '| --chat-bottom ahora:', cs.getPropertyValue('--chat-bottom').trim())
     if (keyboardOpen && messagesRef.current)
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [keyboardOpen])
