@@ -4,6 +4,9 @@
 
 /* ── Design tokens Mis Numeritos ────────────────────────────── */
 :root {
+  /* Layout variables — sobreescritas por JS en tiempo real */
+  --chat-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+
   --mn-violet:        #8b5cf6;
   --mn-violet-600:    #7c3aed;
   --mn-violet-400:    #a78bfa;

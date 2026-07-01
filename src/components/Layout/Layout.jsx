@@ -49,9 +49,16 @@ export default function Layout() {
       // conocida en lugar del valor intermedio que iOS reporta durante la animación
       // (ej. 793 en lugar de 852). Cuando está abierto (diff>100), usar h real.
       const effectiveH = diff > 100 ? h : baseVvH.current
+      // Fix 3: --chat-bottom se actualiza en el mismo RAF que el shell para evitar
+      // el frame de hueco que ocurre cuando el shell ya tiene 449px pero React
+      // todavía no re-renderizó el bottom del contenedor del chat.
+      const chatBottom = diff > 100
+        ? '0px'
+        : 'calc(64px + env(safe-area-inset-bottom, 0px))'
       requestAnimationFrame(() => {
         document.documentElement.style.setProperty('--vv-height', effectiveH + 'px')
         document.documentElement.style.setProperty('--vv-top', t + 'px')
+        document.documentElement.style.setProperty('--chat-bottom', chatBottom)
         console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top:', t, 'diff:', diff)
       })
     }
@@ -88,13 +95,16 @@ export default function Layout() {
   // que iOS reporta durante la animación de cierre del teclado.
   useEffect(() => {
     if (keyboardOpen) return
+    const NAV_BOTTOM = 'calc(64px + env(safe-area-inset-bottom, 0px))'
     const max = baseVvH.current
     document.documentElement.style.setProperty('--vv-height', max + 'px')
     document.documentElement.style.setProperty('--vv-top', '0px')
+    document.documentElement.style.setProperty('--chat-bottom', NAV_BOTTOM)
     console.log('[KB-CLOSE-FORCED] immediate --vv-height:', max, '--vv-top: 0')
     const t = setTimeout(() => {
       document.documentElement.style.setProperty('--vv-height', baseVvH.current + 'px')
       document.documentElement.style.setProperty('--vv-top', '0px')
+      document.documentElement.style.setProperty('--chat-bottom', NAV_BOTTOM)
       console.log('[KB-CLOSE-FORCED-250] --vv-height:', baseVvH.current, '--vv-top: 0')
     }, 250)
     return () => clearTimeout(t)

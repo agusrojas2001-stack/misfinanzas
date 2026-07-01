@@ -58,6 +58,17 @@ export default function ChatbotPage() {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [mensajes])
 
+  // Resync --chat-bottom al montar: corrige cualquier valor obsoleto que haya
+  // quedado de una sesión anterior en otra pantalla.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const NAV_BOTTOM = 'calc(64px + env(safe-area-inset-bottom, 0px))'
+    document.documentElement.style.setProperty(
+      '--chat-bottom',
+      keyboardOpen ? '0px' : NAV_BOTTOM
+    )
+  }, [])
+
   // Scroll al fondo cuando abre el teclado
   useEffect(() => {
     if (keyboardOpen && messagesRef.current)
@@ -199,7 +210,7 @@ export default function ChatbotPage() {
       className="fixed left-0 right-0 z-10 bg-zinc-950 overflow-hidden"
       style={{
         top:    'calc(44px + env(safe-area-inset-top, 0px))',
-        bottom: keyboardOpen ? '0' : 'calc(64px + env(safe-area-inset-bottom, 0px))',
+        bottom: 'var(--chat-bottom, calc(64px + env(safe-area-inset-bottom, 0px)))',
       }}
     >
       <div className="flex flex-col h-full">
