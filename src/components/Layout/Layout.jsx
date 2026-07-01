@@ -80,13 +80,21 @@ export default function Layout() {
 
     function onFocusOut() { setTimeout(syncShell, 200) }
 
+    function onVvScroll() {
+      const diff = baseVvH.current - vv.height
+      const cs = getComputedStyle(document.documentElement)
+      console.log('[VV-SCROLL] vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop,
+        'diff:', diff, '--chat-bottom:', cs.getPropertyValue('--chat-bottom').trim())
+      syncShell()
+    }
+
     syncShell()
     vv.addEventListener('resize', onVvResize)
-    vv.addEventListener('scroll', syncShell)
+    vv.addEventListener('scroll', onVvScroll)
     document.addEventListener('focusout', onFocusOut)
     return () => {
       vv.removeEventListener('resize', onVvResize)
-      vv.removeEventListener('scroll', syncShell)
+      vv.removeEventListener('scroll', onVvScroll)
       document.removeEventListener('focusout', onFocusOut)
     }
   }, [])
