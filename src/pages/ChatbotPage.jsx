@@ -65,13 +65,6 @@ export default function ChatbotPage() {
       '| --vv-height:', cs.getPropertyValue('--vv-height').trim(),
       '| --vv-top:', cs.getPropertyValue('--vv-top').trim(),
       '| --chat-bottom:', cs.getPropertyValue('--chat-bottom').trim())
-
-    const NAV_BOTTOM = 'calc(64px + env(safe-area-inset-bottom, 0px))'
-    document.documentElement.style.setProperty(
-      '--chat-bottom',
-      keyboardOpen ? '0px' : NAV_BOTTOM
-    )
-
     return () => {
       const cs2 = getComputedStyle(document.documentElement)
       console.log('[CHAT-UNMOUNT] keyboardOpen(mount-val):', keyboardOpen,

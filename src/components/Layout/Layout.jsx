@@ -94,18 +94,17 @@ export default function Layout() {
   // Cuando keyboardOpen pasa a false, forzamos la altura máxima conocida (baseVvH)
   // inmediatamente y de nuevo a los 250ms, para no quedar con el valor intermedio
   // que iOS reporta durante la animación de cierre del teclado.
+  // NOTA: --chat-bottom NO se toca aquí — solo syncShell lo controla para evitar
+  // la race condition donde el timer de 250ms pisa el 0px que syncShell ya escribió.
   useEffect(() => {
     if (keyboardOpen) return
-    const NAV_BOTTOM = 'calc(64px + env(safe-area-inset-bottom, 0px))'
     const max = baseVvH.current
     document.documentElement.style.setProperty('--vv-height', max + 'px')
     document.documentElement.style.setProperty('--vv-top', '0px')
-    document.documentElement.style.setProperty('--chat-bottom', NAV_BOTTOM)
     console.log('[KB-CLOSE-FORCED] immediate --vv-height:', max, '--vv-top: 0')
     const t = setTimeout(() => {
       document.documentElement.style.setProperty('--vv-height', baseVvH.current + 'px')
       document.documentElement.style.setProperty('--vv-top', '0px')
-      document.documentElement.style.setProperty('--chat-bottom', NAV_BOTTOM)
       console.log('[KB-CLOSE-FORCED-250] --vv-height:', baseVvH.current, '--vv-top: 0')
     }, 250)
     return () => clearTimeout(t)
