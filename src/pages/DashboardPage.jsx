@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useMovimientos } from '../hooks/useMovimientos'
+import { usePresupuesto } from '../hooks/usePresupuesto'
 import { supabase } from '../lib/supabase'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
@@ -75,12 +76,94 @@ function mesActual() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
+// Escala el font-size para que el monto siempre entre en una card de ~50% del viewport.
+// Área de texto ≈ 45vw - 32px de padding de .card.
+// Con Plus Jakarta Sans 800 + tabular-nums cada dígito ocupa ≈ 0.58em de ancho.
+function montoFontSize(monto) {
+  const len = formatARS(monto).length
+  // clamp(min, calc basado en vw, max)
+  const vw  = (45 / len / 0.58).toFixed(2)   // vw necesarios
+  const sub = (32 / len / 0.58).toFixed(2)   // corrección por padding
+  return `clamp(11px, calc(${vw}vw - ${sub}px), 22px)`
+}
+
+const CARD_PAD = { padding: '10px 12px' }
+
 function SaldoCard({ label, monto, cantidad, color }) {
   return (
-    <div className="card flex-1 min-w-0 overflow-hidden">
-      <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide truncate block mb-2">{label}</span>
-      <p className={`text-xs font-extrabold font-num ${color} leading-tight truncate`}>{formatARS(monto)}</p>
+    <div className="card flex-1 min-w-0" style={CARD_PAD}>
+      <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide block mb-1.5">{label}</span>
+      <p className={`font-extrabold font-num ${color} leading-tight`}
+         style={{
+           fontSize: montoFontSize(monto),
+           whiteSpace: 'nowrap',
+           letterSpacing: '-0.02em',
+           fontVariantNumeric: 'tabular-nums',
+         }}>
+        {formatARS(monto)}
+      </p>
       <p className="text-xs font-normal text-zinc-500 mt-1">{cantidad} mov.</p>
+    </div>
+  )
+}
+
+const PRESUP_STYLE = {
+  ...CARD_PAD,
+  background: 'linear-gradient(150deg, rgba(109,40,217,.18), rgba(67,20,179,.12))',
+  borderColor: 'rgba(139,92,246,.35)',
+}
+
+function PresupuestoCard({ gastos, mes }) {
+  const { presupuestos, loading } = usePresupuesto(mes)
+  const general = presupuestos.find(p => p.categoria_id === null)
+
+  if (loading) {
+    return (
+      <div className="card flex-1 min-w-0" style={PRESUP_STYLE}>
+        <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
+        <div className="h-4 w-3/4 rounded animate-pulse" style={{ background: 'rgba(139,92,246,.15)' }} />
+      </div>
+    )
+  }
+
+  if (!general) {
+    return (
+      <div className="card flex-1 min-w-0" style={PRESUP_STYLE}>
+        <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
+        <p className="text-xs mt-1" style={{ color: 'rgba(167,139,250,.5)' }}>Sin presupuesto</p>
+      </div>
+    )
+  }
+
+  const usado      = gastos
+  const total      = general.monto_max
+  const disponible = total - usado
+  const pct        = total > 0 ? Math.min((usado / total) * 100, 100) : 0
+  const excede     = usado > total
+  const warn       = !excede && pct >= 80
+  const fillColor  = excede ? '#fb7185' : warn ? '#fbbf24' : '#34d399'
+  const montoColor = fillColor   // el disponible adopta el mismo semáforo que la barra
+
+  return (
+    <div className="card flex-1 min-w-0" style={PRESUP_STYLE}>
+      <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
+      <p className="font-extrabold font-num leading-tight"
+         style={{
+           fontSize: montoFontSize(disponible),
+           whiteSpace: 'nowrap',
+           letterSpacing: '-0.02em',
+           fontVariantNumeric: 'tabular-nums',
+           color: montoColor,
+         }}>
+        {formatARS(disponible)}
+      </p>
+      <p className="text-xs mt-0.5" style={{ whiteSpace: 'nowrap', color: 'rgba(167,139,250,.6)' }}>
+        de {formatARS(total)}
+      </p>
+      <div className="mt-2 h-1.5 rounded-full" style={{ background: 'rgba(139,92,246,.15)' }}>
+        <div className="h-1.5 rounded-full transition-all duration-500"
+             style={{ width: `${pct}%`, background: fillColor }} />
+      </div>
     </div>
   )
 }
@@ -323,10 +406,11 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" />
               <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto').length}   color="text-rose-400"   />
               <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" />
+              <PresupuestoCard gastos={totalGastos} mes={mes} />
             </div>
           </div>
 
