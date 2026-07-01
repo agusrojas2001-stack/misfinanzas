@@ -42,18 +42,26 @@ export default function Layout() {
     // (iOS empuja el contenido con offsetTop en vez de achicar el viewport)
     function syncShell() {
       const h = vv.height
-      // iOS hace scroll rebound con offsetTop negativo al cerrar el teclado;
-      // clampeamos a 0 — el shell nunca debe subir por encima de su posición natural.
+      const diff = baseVvH.current - h
+      // Fix 1: clampear offsetTop — iOS rebota a negativos al cerrar teclado.
       const t = Math.max(0, vv.offsetTop)
+      // Fix 2: cuando el teclado está cerrado (diff<=100), usar la altura máxima
+      // conocida en lugar del valor intermedio que iOS reporta durante la animación
+      // (ej. 793 en lugar de 852). Cuando está abierto (diff>100), usar h real.
+      const effectiveH = diff > 100 ? h : baseVvH.current
       requestAnimationFrame(() => {
-        document.documentElement.style.setProperty('--vv-height', h + 'px')
+        document.documentElement.style.setProperty('--vv-height', effectiveH + 'px')
         document.documentElement.style.setProperty('--vv-top', t + 'px')
+        console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top:', t, 'diff:', diff)
       })
     }
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
-      if (diff > 100) {
+      const willOpen = diff > 100
+      console.log(willOpen ? '[KB-OPEN]' : '[KB-CLOSE]',
+        'vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop, 'diff:', diff)
+      if (willOpen) {
         setKeyboardOpen(true)
       } else {
         if (vv.height > baseVvH.current) baseVvH.current = vv.height
@@ -62,9 +70,6 @@ export default function Layout() {
       syncShell()
     }
 
-    // En iOS el resize final al cerrar teclado en modales no llega o llega
-    // con valor viejo; releer el viewport 200ms después de que cualquier input
-    // pierda foco garantiza que el shell quede en la posición correcta.
     function onFocusOut() { setTimeout(syncShell, 200) }
 
     syncShell()
@@ -78,16 +83,20 @@ export default function Layout() {
     }
   }, [])
 
-  // Doble seguro: cuando keyboardOpen vuelve a false, forzamos un
-  // resync tardío por si el resize del viewport llegó con valor viejo.
+  // Cuando keyboardOpen pasa a false, forzamos la altura máxima conocida (baseVvH)
+  // inmediatamente y de nuevo a los 250ms, para no quedar con el valor intermedio
+  // que iOS reporta durante la animación de cierre del teclado.
   useEffect(() => {
     if (keyboardOpen) return
+    const max = baseVvH.current
+    document.documentElement.style.setProperty('--vv-height', max + 'px')
+    document.documentElement.style.setProperty('--vv-top', '0px')
+    console.log('[KB-CLOSE-FORCED] immediate --vv-height:', max, '--vv-top: 0')
     const t = setTimeout(() => {
-      const vv = window.visualViewport
-      if (!vv) return
-      document.documentElement.style.setProperty('--vv-height', vv.height + 'px')
-      document.documentElement.style.setProperty('--vv-top', Math.max(0, vv.offsetTop) + 'px')
-    }, 200)
+      document.documentElement.style.setProperty('--vv-height', baseVvH.current + 'px')
+      document.documentElement.style.setProperty('--vv-top', '0px')
+      console.log('[KB-CLOSE-FORCED-250] --vv-height:', baseVvH.current, '--vv-top: 0')
+    }, 250)
     return () => clearTimeout(t)
   }, [keyboardOpen])
 

@@ -2,8 +2,20 @@ import { useEffect } from 'react'
 
 export default function Modal({ titulo, onClose, actions, children }) {
   useEffect(() => {
+    const vv = window.visualViewport
+    const cs = getComputedStyle(document.documentElement)
+    console.log('[OPEN-MODAL] vv.height:', vv?.height, 'vv.offsetTop:', vv?.offsetTop,
+      '| --vv-height:', cs.getPropertyValue('--vv-height').trim(),
+      '--vv-top:', cs.getPropertyValue('--vv-top').trim())
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+      const vv2 = window.visualViewport
+      const cs2 = getComputedStyle(document.documentElement)
+      console.log('[CLOSE-MODAL] vv.height:', vv2?.height, 'vv.offsetTop:', vv2?.offsetTop,
+        '| --vv-height:', cs2.getPropertyValue('--vv-height').trim(),
+        '--vv-top:', cs2.getPropertyValue('--vv-top').trim())
+    }
   }, [])
 
   return (
