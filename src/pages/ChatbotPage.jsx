@@ -215,13 +215,12 @@ export default function ChatbotPage() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-10 bg-zinc-950 overflow-hidden"
+      className="fixed left-0 right-0 z-10 bg-zinc-950 overflow-hidden flex flex-col"
       style={{
         top:    'calc(44px + env(safe-area-inset-top, 0px))',
         bottom: 'var(--chat-bottom, calc(64px + env(safe-area-inset-bottom, 0px)))',
       }}
     >
-      <div className="flex flex-col h-full">
 
         <div
           className="flex-shrink-0 px-4 md:px-6 pt-4 pb-3"
@@ -246,8 +245,8 @@ export default function ChatbotPage() {
 
         <div
           ref={messagesRef}
-          className="flex-1 overflow-y-auto overscroll-contain"
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
         >
           <div className="flex flex-col justify-end min-h-full px-4 md:px-6 py-4 space-y-4">
           {mensajes.map(m => (
@@ -317,7 +316,6 @@ export default function ChatbotPage() {
           </form>
         </div>
 
-      </div>
     </div>
   )
 }
