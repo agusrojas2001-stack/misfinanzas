@@ -13,7 +13,7 @@ export default function BottomNav() {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+    <nav className="shrink-0 w-full z-50 safe-bottom"
          style={{ background: 'rgba(24,24,27,0.96)', borderTop: '1px solid #1f1f23', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center justify-around h-16 max-w-4xl mx-auto px-2">
         {tabs.map(({ to, label, Icon }) => {
