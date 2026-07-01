@@ -31,7 +31,8 @@ export default function Layout() {
 
   // ── Keyboard detection (single source of truth) ──────────────
   const [keyboardOpen, setKeyboardOpen] = useState(false)
-  const baseVvH = useRef(null)
+  const baseVvH   = useRef(null)
+  const prevDiff  = useRef(0)
 
   useEffect(() => {
     const vv = window.visualViewport
@@ -62,16 +63,24 @@ export default function Layout() {
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
-      const willOpen = diff > 100
+      const willOpen   = diff > 100
+      const wasOpen    = prevDiff.current > 100
+      const stateChanged = willOpen !== wasOpen
+      prevDiff.current = diff
+
       console.log(willOpen ? '[KB-OPEN]' : '[KB-CLOSE]',
-        'vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop, 'diff:', diff)
+        'vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop, 'diff:', diff,
+        stateChanged ? '(state-change)' : '(rubber-band)')
+
       if (willOpen) {
         setKeyboardOpen(true)
       } else {
         if (vv.height > baseVvH.current) baseVvH.current = vv.height
         setKeyboardOpen(false)
       }
-      syncShell()
+      // Solo actualizar --vv-top si el teclado realmente cambió de estado.
+      // Fluctuaciones por rubber-band mantienen el valor anterior congelado.
+      syncShell({ skipTop: !stateChanged })
     }
 
     function onFocusOut() { setTimeout(syncShell, 200) }
@@ -81,7 +90,8 @@ export default function Layout() {
       const cs = getComputedStyle(document.documentElement)
       console.log('[VV-SCROLL] vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop,
         'diff:', diff, '--chat-bottom:', cs.getPropertyValue('--chat-bottom').trim())
-      syncShell({ skipTop: true })
+      // Sin syncShell: vv.scroll es rubber-band interno, no cambio real de teclado.
+      // Los cambios reales (teclado abre/cierra) llegan por 'resize'.
     }
 
     syncShell()

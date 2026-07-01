@@ -247,6 +247,7 @@ export default function ChatbotPage() {
         <div
           ref={messagesRef}
           className="flex-1 overflow-y-auto overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <div className="flex flex-col justify-end min-h-full px-4 md:px-6 py-4 space-y-4">
           {mensajes.map(m => (
