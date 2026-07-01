@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { enviarPush } from './pushService'
+import { getEtapaMes } from './etapaMes'
 
 // ============================================================
 // calcularProximoAviso
@@ -84,6 +85,7 @@ export async function evaluarReglas(userId) {
       'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
     ]
     const nombreMes = MESES[now.getMonth()]
+    const etapa = getEtapaMes(now)
 
     // Fetch en paralelo
     const [
@@ -159,8 +161,8 @@ export async function evaluarReglas(userId) {
         {
           tipo: 'sistema',
           emoji: '📅',
-          titulo: `Empezó ${nombreMes}`,
-          mensaje: `¿Arrancamos con el presupuesto de ${nombreMes}?`,
+          titulo: `Arrancó ${nombreMes}`,
+          mensaje: `Nuevo mes, nueva oportunidad. ¿Armamos el presupuesto de ${nombreMes}?`,
           accion_url: '/presupuesto',
         },
         `inicio_mes_${mes}`,
@@ -186,24 +188,34 @@ export async function evaluarReglas(userId) {
         const catNombre = cat?.nombre || 'una categoría'
 
         if (pct >= 1) {
+          const msgExcedido = {
+            arranque: `Apenas arranca el mes y ya superaste el presupuesto en ${catNombre}. Aflojá esta semana y lo emparejás.`,
+            mitad: `Te fuiste del presupuesto en ${catNombre}. Todavía quedan días, miremos dónde aflojar.`,
+            cierre: `Cerrás el mes sobre el presupuesto en ${catNombre}. Para el mes que viene lo ajustamos.`,
+          }
           await crearSiNueva(
             {
               tipo: 'urgente',
               emoji: '🚨',
               titulo: `Presupuesto excedido: ${catNombre}`,
-              mensaje: `Te fuiste del presupuesto en ${catNombre}. Tranqui, lo emparejás las próximas semanas.`,
+              mensaje: msgExcedido[etapa],
               accion_url: '/presupuesto',
             },
             `presupuesto_excedido_${pres.categoria_id}_${mes}`,
             3
           )
         } else if (pct >= 0.8) {
+          const msg80 = {
+            arranque: `Ya usaste el 80% del presupuesto de ${catNombre} y el mes recién arranca. Ojo con lo que viene.`,
+            mitad: `Vas al 80% en ${catNombre}. Controlá el gasto estos días y cerrás bien.`,
+            cierre: `Vas al 80% en ${catNombre} con pocos días para el cierre. Controlá los últimos y cerrás justo.`,
+          }
           await crearSiNueva(
             {
               tipo: 'recordatorio',
               emoji: '⚠️',
               titulo: `Vas al 80% en ${catNombre}`,
-              mensaje: `Ya usaste el 80% de lo que tenías para ${catNombre} este mes. Ojo con lo que viene.`,
+              mensaje: msg80[etapa],
               accion_url: '/presupuesto',
             },
             `presupuesto_80_${pres.categoria_id}_${mes}`,
@@ -238,12 +250,17 @@ export async function evaluarReglas(userId) {
       const ultimaFecha = new Date(Math.max(...fechas))
       const diffDias = Math.floor((now - ultimaFecha) / (1000 * 60 * 60 * 24))
       if (diffDias >= 7) {
+        const msgInactivo = {
+          arranque: `Hace ${diffDias} días que no anotás nada. Cargá los primeros movimientos y vamos viendo.`,
+          mitad: `Hace ${diffDias} días que no anotás nada. ¿Ponemos los numeritos al día?`,
+          cierre: `Hace ${diffDias} días sin registrar. El mes cierra pronto, ¿lo ponemos al día antes?`,
+        }
         await crearSiNueva(
           {
             tipo: 'sistema',
             emoji: '💭',
             titulo: '¿Todo bien con tus finanzas?',
-            mensaje: `Hace ${diffDias} días que no anotás nada. ¿Ponemos los numeritos al día?`,
+            mensaje: msgInactivo[etapa],
             accion_url: '/registrar',
           },
           `sin_movimientos_${hoy}`,
@@ -252,12 +269,17 @@ export async function evaluarReglas(userId) {
       }
     } else {
       // Sin movimientos en todo el mes
+      const msgSinNada = {
+        arranque: `Arrancó el mes y todavía no anotaste nada. Cargá tus primeros movimientos.`,
+        mitad: `Se te escapan los gastos. Ponelos al día en un toque.`,
+        cierre: `El mes casi termina y no tenés movimientos anotados. ¿Lo ponemos al día antes de que cierre?`,
+      }
       await crearSiNueva(
         {
           tipo: 'sistema',
           emoji: '💭',
           titulo: 'Empezá a registrar',
-          mensaje: 'Se te escapan los gastos. Ponelos al día en un toque.',
+          mensaje: msgSinNada[etapa],
           accion_url: '/registrar',
         },
         `sin_movimientos_${hoy}`,
