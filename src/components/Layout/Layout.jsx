@@ -41,15 +41,20 @@ export default function Layout() {
     // Mueve el shell para que siga al viewport visible en iOS standalone
     // (iOS empuja el contenido con offsetTop en vez de achicar el viewport)
     function syncShell() {
+      const h = vv.height, t = vv.offsetTop
       requestAnimationFrame(() => {
-        document.documentElement.style.setProperty('--vv-height', vv.height + 'px')
-        document.documentElement.style.setProperty('--vv-top', vv.offsetTop + 'px')
+        document.documentElement.style.setProperty('--vv-height', h + 'px')
+        document.documentElement.style.setProperty('--vv-top', t + 'px')
+        console.log('[SYNC] setting --vv-height:', h, '--vv-top:', t)
       })
     }
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
-      if (diff > 100) {
+      const willOpen = diff > 100
+      console.log(willOpen ? '[KB-OPEN]' : '[KB-CLOSE]',
+        'vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop, 'diff:', diff)
+      if (willOpen) {
         setKeyboardOpen(true)
       } else {
         if (vv.height > baseVvH.current) baseVvH.current = vv.height
@@ -81,6 +86,7 @@ export default function Layout() {
     const t = setTimeout(() => {
       const vv = window.visualViewport
       if (!vv) return
+      console.log('[KB-CLOSE-DELAYED] vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop)
       document.documentElement.style.setProperty('--vv-height', vv.height + 'px')
       document.documentElement.style.setProperty('--vv-top', vv.offsetTop + 'px')
     }, 200)
