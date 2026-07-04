@@ -111,7 +111,45 @@ function buildHistorialText(reportesAnteriores) {
   return `\n\n=== HISTORIAL (${reportesAnteriores.length} meses anteriores) ===\n${secciones.join('\n\n')}`
 }
 
-export async function generarAnalisis(datos, reportesAnteriores = [], contextoUsuario = null) {
+// Detecta 1-3 gastos llamativos y devuelve preguntas concretas para el usuario.
+// Retorna string[] — vacío si no hay anomalías o si falla el parse.
+export async function detectarPreguntas(datos, contextoUsuario = null) {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  if (!apiKey) return []
+
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+
+  const contextoText = contextoUsuario ? `\nContexto del usuario: "${contextoUsuario}"` : ''
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 350,
+      system: `Sos un analizador de gastos. Dado el resumen financiero de un mes, identificá entre 1 y 3 gastos variables llamativos o inusuales que ameriten una pregunta de clarificación al usuario.
+
+Un gasto es llamativo si:
+- Una categoría variable representa más del 25% del total de gastos
+- Un gasto genérico ("Varios", "Otros") tiene monto alto sin justificación obvia
+- Una categoría tiene un monto desproporcionado respecto al resto
+
+Formulá preguntas concretas: mencioná el monto y la categoría. Tono cálido, sin reto, español rioplatense.
+Ejemplo: "¿El gasto de $180.000 en Varios fue algo puntual, como un regalo o una salida especial?"
+
+Si no hay gastos llamativos, devolvé preguntas vacío.
+Devolvé ÚNICAMENTE JSON válido, sin texto adicional: {"preguntas": ["..."]}`,
+      messages: [{
+        role: 'user',
+        content: `Analizá estos gastos:${contextoText}\n\n${JSON.stringify(datos, null, 2)}`,
+      }],
+    })
+    const parsed = JSON.parse(response.content[0].text)
+    return Array.isArray(parsed.preguntas) ? parsed.preguntas.slice(0, 3) : []
+  } catch {
+    return []
+  }
+}
+
+export async function generarAnalisis(datos, reportesAnteriores = [], contextoUsuario = null, preguntasRespuestas = []) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) {
     throw new Error('La clave de IA no está configurada. Agregá VITE_ANTHROPIC_API_KEY en las variables de entorno de Vercel.')
@@ -128,8 +166,15 @@ export async function generarAnalisis(datos, reportesAnteriores = [], contextoUs
   const systemPrompt = BASE_PROMPT + DIRECTIVAS_ETAPA[etapa] + (tieneHistorial ? DIRECTIVA_HISTORIAL : '')
 
   const contextoText = contextoUsuario ? `\n\nNota del usuario sobre este mes: "${contextoUsuario}"` : ''
+
+  const respondidas = (preguntasRespuestas ?? []).filter(p => p.respuesta?.trim())
+  const preguntasText = respondidas.length > 0
+    ? '\n\nAclaraciones del usuario sobre gastos del mes:\n' +
+      respondidas.map(p => `- ${p.pregunta}\n  → ${p.respuesta}`).join('\n')
+    : ''
+
   const historialText = tieneHistorial ? buildHistorialText(reportesAnteriores) : ''
-  const payload = `Hoy es día ${dia} del mes (etapa: ${etapa}).\n\nAnalizá mis finanzas del mes:\n\n${JSON.stringify(datos, null, 2)}${contextoText}${historialText}`
+  const payload = `Hoy es día ${dia} del mes (etapa: ${etapa}).\n\nAnalizá mis finanzas del mes:\n\n${JSON.stringify(datos, null, 2)}${contextoText}${preguntasText}${historialText}`
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',

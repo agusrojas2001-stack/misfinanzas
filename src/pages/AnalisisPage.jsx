@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useMovimientos } from '../hooks/useMovimientos'
 import { usePresupuesto } from '../hooks/usePresupuesto'
@@ -6,7 +6,7 @@ import { useMetas } from '../hooks/useMetas'
 import { useReportes } from '../hooks/useReportes'
 import { supabase } from '../lib/supabase'
 import { calcularInsights } from '../lib/insights'
-import { generarAnalisis } from '../lib/ia-analyzer'
+import { generarAnalisis, detectarPreguntas } from '../lib/ia-analyzer'
 import ReporteMensual from '../components/Insights/ReporteMensual'
 import HistorialReportes from '../components/Insights/HistorialReportes'
 
@@ -78,11 +78,19 @@ export default function AnalisisPage() {
   const [movsPrev, setMovsPrev]       = useState([])
 
   // IA state
-  const [generando, setGenerando]       = useState(false)
-  const [loaderMsg, setLoaderMsg]       = useState(0)
-  const [reporteActual, setReporteActual] = useState(null)
-  const [errorIA, setErrorIA]           = useState(null)
+  const [generando, setGenerando]             = useState(false)
+  const [loaderMsg, setLoaderMsg]             = useState(0)
+  const [reporteActual, setReporteActual]     = useState(null)
+  const [errorIA, setErrorIA]                 = useState(null)
   const [contextoUsuario, setContextoUsuario] = useState('')
+  const [preguntando, setPreguntando]         = useState(false)
+  const [preguntas, setPreguntas]             = useState([])
+
+  // Datos computados en fase 1, reutilizados en fase 2 (confirmar respuestas)
+  const pendingPayload      = useRef(null)
+  const pendingResumenDatos = useRef(null)
+  const pendingReportesAnt  = useRef(null)
+  const pendingContexto     = useRef(null)
 
   // Fetch 6-month history para evolución de ahorro
   useEffect(() => {
@@ -207,86 +215,108 @@ export default function AnalisisPage() {
   // ── IA helpers ─────────────────────────────────────────────────
   const monoExpression = balance >= 0 ? 'contenta' : 'tranqui'
 
+  function buildPayloadData() {
+    const PALABRAS_FIJO = ['gym', 'gimnasio', 'transport', 'colectivo', 'subte', 'tren', 'facultad', 'universidad', 'colegio', 'estudio',
+      'suscri', 'netflix', 'spotify', 'disney', 'amazon', 'alquiler', 'servicio', 'internet', 'luz', 'gas', 'agua',
+      'seguro', 'obra social', 'medicina', 'prepaga', 'cuota', 'banco', 'tarjeta fija']
+    const esFijo = (nombre) => PALABRAS_FIJO.some(p => nombre.toLowerCase().includes(p))
+
+    const gastosPorCategoria = Object.values(gastosCatActual)
+      .sort((a, b) => b.total - a.total)
+      .map(c => ({ categoria: `${c.emoji} ${c.nombre}`, monto: c.total, tipo: esFijo(c.nombre) ? 'fijo' : 'variable' }))
+
+    const totalFijos     = gastosPorCategoria.filter(c => c.tipo === 'fijo').reduce((s, c) => s + c.monto, 0)
+    const totalVariables = gastosPorCategoria.filter(c => c.tipo === 'variable').reduce((s, c) => s + c.monto, 0)
+
+    const payload = {
+      mes: mesLabel(mes),
+      resumen: { totalIngresos, totalGastos, totalAhorro, balance, gastos_fijos: totalFijos, gastos_variables: totalVariables },
+      gastos_por_categoria: gastosPorCategoria,
+      presupuesto: presupuestos.map(p => ({
+        categoria: p.categoria_id === null ? 'Presupuesto general' : `${p.categorias?.emoji ?? ''} ${p.categorias?.nombre ?? ''}`.trim(),
+        monto_max: p.monto_max,
+        gastado: p.categoria_id === null ? totalGastos : gastosCatActual[p.categoria_id]?.total ?? 0,
+      })),
+      metas: metas.filter(m => !m.archivada).map(m => ({
+        nombre: `${m.emoji} ${m.nombre}`,
+        objetivo: m.monto_objetivo,
+        ahorrado: movimientos.filter(mv => mv.tipo === 'ahorro' && mv.meta_id === m.id).reduce((s, mv) => s + mv.monto, 0),
+        fecha_objetivo: m.fecha_objetivo,
+      })),
+      ultimos_3_meses: dataMeses.slice(-3).map(d => ({ mes: d.mes, ingresos: d.Ingresos, gastos: d.Gastos, ahorro: d.Ahorro })),
+      comparativa_mes_anterior: comparativa.slice(0, 5).map(c => ({
+        categoria: `${c.emoji} ${c.nombre}`, este_mes: c.total, mes_anterior: c.prev, variacion_pct: c.diff,
+      })),
+    }
+
+    const resumenDatosActual = {
+      ingresos: totalIngresos, gastos: totalGastos, ahorro: totalAhorro, balance,
+      gastos_fijos: totalFijos, gastos_variables: totalVariables, gastos_por_categoria: gastosPorCategoria,
+    }
+
+    const reportesAnteriores = reportes
+      .filter(r => r.mes && !r.mes.startsWith(mes))
+      .sort((a, b) => b.mes.localeCompare(a.mes))
+      .slice(0, 6)
+
+    return { payload, resumenDatosActual, reportesAnteriores }
+  }
+
+  async function _generarYGuardar(payload, reportesAnteriores, contexto, resumenDatosActual, preguntasRespuestas) {
+    const texto = await generarAnalisis(payload, reportesAnteriores, contexto, preguntasRespuestas)
+    const { error } = await guardar({
+      mes,
+      contenido: texto,
+      resumen_datos: resumenDatosActual,
+      contexto_usuario: contexto,
+      preguntas: preguntasRespuestas.length > 0 ? preguntasRespuestas : null,
+    })
+    if (error) throw new Error(error)
+    setReporteActual({ contenido: texto, generado_at: new Date().toISOString() })
+  }
+
   async function handleGenerarAnalisis() {
     setErrorIA(null)
     setGenerando(true)
     setLoaderMsg(0)
     try {
-      const PALABRAS_FIJO = ['gym', 'gimnasio', 'transport', 'colectivo', 'subte', 'tren', 'facultad', 'universidad', 'colegio', 'estudio',
-        'suscri', 'netflix', 'spotify', 'disney', 'amazon', 'alquiler', 'servicio', 'internet', 'luz', 'gas', 'agua',
-        'seguro', 'obra social', 'medicina', 'prepaga', 'cuota', 'banco', 'tarjeta fija']
-      const esFijo = (nombre) => PALABRAS_FIJO.some(p => nombre.toLowerCase().includes(p))
-
-      const gastosPorCategoria = Object.values(gastosCatActual)
-        .sort((a, b) => b.total - a.total)
-        .map(c => ({
-          categoria: `${c.emoji} ${c.nombre}`,
-          monto: c.total,
-          tipo: esFijo(c.nombre) ? 'fijo' : 'variable',
-        }))
-
-      const presupuestoResumen = presupuestos.map(p => ({
-        categoria: p.categoria_id === null ? 'Presupuesto general' : `${p.categorias?.emoji ?? ''} ${p.categorias?.nombre ?? ''}`.trim(),
-        monto_max: p.monto_max,
-        gastado: p.categoria_id === null
-          ? totalGastos
-          : gastosCatActual[p.categoria_id]?.total ?? 0,
-      }))
-
-      const metasResumen = metas.filter(m => !m.archivada).map(m => ({
-        nombre: `${m.emoji} ${m.nombre}`,
-        objetivo: m.monto_objetivo,
-        ahorrado: movimientos.filter(mv => mv.tipo === 'ahorro' && mv.meta_id === m.id).reduce((s, mv) => s + mv.monto, 0),
-        fecha_objetivo: m.fecha_objetivo,
-      }))
-
-      const ultimosMeses = dataMeses.slice(-3).map(d => ({
-        mes: d.mes,
-        ingresos: d.Ingresos,
-        gastos: d.Gastos,
-        ahorro: d.Ahorro,
-      }))
-
-      const totalFijos    = gastosPorCategoria.filter(c => c.tipo === 'fijo').reduce((s, c) => s + c.monto, 0)
-      const totalVariables = gastosPorCategoria.filter(c => c.tipo === 'variable').reduce((s, c) => s + c.monto, 0)
-
-      const payload = {
-        mes: mesLabel(mes),
-        resumen: { totalIngresos, totalGastos, totalAhorro, balance, gastos_fijos: totalFijos, gastos_variables: totalVariables },
-        gastos_por_categoria: gastosPorCategoria,
-        presupuesto: presupuestoResumen,
-        metas: metasResumen,
-        ultimos_3_meses: ultimosMeses,
-        comparativa_mes_anterior: comparativa.slice(0, 5).map(c => ({
-          categoria: `${c.emoji} ${c.nombre}`,
-          este_mes: c.total,
-          mes_anterior: c.prev,
-          variacion_pct: c.diff,
-        })),
-      }
-
-      // Snapshot del mes para alimentar reportes futuros
-      const resumenDatosActual = {
-        ingresos: totalIngresos,
-        gastos: totalGastos,
-        ahorro: totalAhorro,
-        balance,
-        gastos_fijos: totalFijos,
-        gastos_variables: totalVariables,
-        gastos_por_categoria: gastosPorCategoria,
-      }
-
-      // Últimos 6 reportes anteriores con sus datos históricos
-      const reportesAnteriores = reportes
-        .filter(r => r.mes && !r.mes.startsWith(mes))
-        .sort((a, b) => b.mes.localeCompare(a.mes))
-        .slice(0, 6)
-
+      const { payload, resumenDatosActual, reportesAnteriores } = buildPayloadData()
       const contexto = contextoUsuario.trim() || null
-      const texto = await generarAnalisis(payload, reportesAnteriores, contexto)
-      const { error } = await guardar({ mes, contenido: texto, resumen_datos: resumenDatosActual, contexto_usuario: contexto })
-      if (error) throw new Error(error)
-      setReporteActual({ contenido: texto, generado_at: new Date().toISOString() })
+
+      pendingPayload.current      = payload
+      pendingResumenDatos.current = resumenDatosActual
+      pendingReportesAnt.current  = reportesAnteriores
+      pendingContexto.current     = contexto
+
+      const detectadas = await detectarPreguntas(payload, contexto)
+
+      if (detectadas.length > 0) {
+        setPreguntas(detectadas.map(q => ({ pregunta: q, respuesta: '' })))
+        setPreguntando(true)
+        return
+      }
+
+      await _generarYGuardar(payload, reportesAnteriores, contexto, resumenDatosActual, [])
+    } catch (e) {
+      setErrorIA(e.message ?? 'Ocurrió un error al generar el análisis.')
+    } finally {
+      setGenerando(false)
+    }
+  }
+
+  async function handleConfirmarRespuestas() {
+    setErrorIA(null)
+    setPreguntando(false)
+    setGenerando(true)
+    setLoaderMsg(0)
+    try {
+      await _generarYGuardar(
+        pendingPayload.current,
+        pendingReportesAnt.current,
+        pendingContexto.current,
+        pendingResumenDatos.current,
+        preguntas,
+      )
     } catch (e) {
       setErrorIA(e.message ?? 'Ocurrió un error al generar el análisis.')
     } finally {
@@ -305,10 +335,10 @@ export default function AnalisisPage() {
 
       {/* Selector de mes */}
       <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2.5">
-        <button onClick={() => { setMes(mesAnterior(mes)); setReporteActual(null); setContextoUsuario('') }}
+        <button onClick={() => { setMes(mesAnterior(mes)); setReporteActual(null); setContextoUsuario(''); setPreguntando(false); setPreguntas([]) }}
           className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95">‹</button>
         <span className="text-sm font-semibold text-zinc-200">{mesLabel(mes)}</span>
-        <button onClick={() => { setMes(mesSiguiente(mes)); setReporteActual(null); setContextoUsuario('') }} disabled={esMesActual}
+        <button onClick={() => { setMes(mesSiguiente(mes)); setReporteActual(null); setContextoUsuario(''); setPreguntando(false); setPreguntas([]) }} disabled={esMesActual}
           className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">›</button>
       </div>
 
@@ -538,66 +568,127 @@ export default function AnalisisPage() {
                   </p>
                 </div>
               ) : !reporteActual ? (
-                // Mes pasado sin reporte: mostrar botón de generación
-                <div className="rounded-[18px] p-5 space-y-4"
-                     style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.25)' }}>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sparkles size={13} className="text-violet-400" />
-                      <p className="text-xs font-black uppercase tracking-widest text-violet-400">Análisis IA</p>
-                    </div>
-                    <h3 className="text-base font-black text-zinc-100">
-                      Generar el Resumen de Monedita
-                    </h3>
-                    <p className="text-sm font-normal text-zinc-400 mt-1 leading-relaxed">
-                      Monedita analiza tus datos de {mesLabel(mes)} y te arma un resumen del mes.
-                    </p>
-                  </div>
+                // Mes pasado sin reporte
+                preguntando ? (
+                  // Pantalla de preguntas de Monedita
+                  <div className="rounded-[18px] p-5 space-y-5"
+                       style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.25)' }}>
 
-                  {/* Nota de contexto */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-400 block">
-                      ¿Algo que Monedita deba saber de este mes?
-                    </label>
-                    <textarea
-                      value={contextoUsuario}
-                      onChange={e => setContextoUsuario(e.target.value)}
-                      placeholder="Ej: gasté de más por un viaje, tuve un gasto médico puntual..."
-                      rows={3}
-                      className="input-dark w-full resize-none text-sm leading-relaxed"
-                    />
-                    <p className="text-xs text-zinc-600">
-                      Opcional. La IA lo incorpora al reporte y lo recuerda el próximo mes.
-                    </p>
-                  </div>
-
-                  {generando ? (
-                    <div className="flex flex-col items-center gap-3 py-4">
-                      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-sm font-bold text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {errorIA && (
-                        <div className="rounded-[14px] px-4 py-3"
-                             style={{ background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.22)' }}>
-                          <p className="text-sm font-semibold" style={{ color: '#fb7185' }}>{errorIA}</p>
+                    <div className="flex items-start gap-3">
+                      <img src="/monedita/monedita-tranqui.svg" alt=""
+                           className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Sparkles size={13} className="text-violet-400" />
+                          <p className="text-xs font-black uppercase tracking-widest text-violet-400">Análisis IA</p>
                         </div>
-                      )}
-                      <button
-                        onClick={handleGenerarAnalisis}
-                        disabled={movimientos.length === 0}
-                        className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed">
-                        Generar el Resumen de Monedita
-                      </button>
-                      {movimientos.length === 0 && (
-                        <p className="text-sm font-medium text-center text-zinc-600">
-                          No hay movimientos registrados en {mesLabel(mes)}.
+                        <p className="text-sm font-semibold text-zinc-300 leading-snug">
+                          Antes de armar tu resumen, tengo{' '}
+                          {preguntas.length === 1 ? 'una pregunta' : `${preguntas.length} preguntas`}{' '}
+                          sobre {mesLabel(mes)}.
                         </p>
-                      )}
-                    </>
-                  )}
-                </div>
+                      </div>
+                    </div>
+
+                    <div className="h-px" style={{ background: 'rgba(139,92,246,.15)' }} />
+
+                    <div className="space-y-5">
+                      {preguntas.map((p, i) => (
+                        <div key={i} className="space-y-2">
+                          <p className="text-sm font-semibold text-zinc-200 leading-snug">{p.pregunta}</p>
+                          <textarea
+                            value={p.respuesta}
+                            onChange={e => setPreguntas(prev =>
+                              prev.map((q, j) => j === i ? { ...q, respuesta: e.target.value } : q)
+                            )}
+                            placeholder="Tu respuesta (opcional — podés dejarlo vacío)..."
+                            rows={2}
+                            className="input-dark w-full resize-none text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {errorIA && (
+                      <div className="rounded-[14px] px-4 py-3"
+                           style={{ background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.22)' }}>
+                        <p className="text-sm font-semibold" style={{ color: '#fb7185' }}>{errorIA}</p>
+                      </div>
+                    )}
+
+                    {generando ? (
+                      <div className="flex flex-col items-center gap-3 py-2">
+                        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-sm font-bold text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
+                      </div>
+                    ) : (
+                      <button onClick={handleConfirmarRespuestas} className="btn-primary text-sm">
+                        Listo, armá el resumen →
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  // Card de generación con nota de contexto
+                  <div className="rounded-[18px] p-5 space-y-4"
+                       style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.25)' }}>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Sparkles size={13} className="text-violet-400" />
+                        <p className="text-xs font-black uppercase tracking-widest text-violet-400">Análisis IA</p>
+                      </div>
+                      <h3 className="text-base font-black text-zinc-100">
+                        Generar el Resumen de Monedita
+                      </h3>
+                      <p className="text-sm font-normal text-zinc-400 mt-1 leading-relaxed">
+                        Monedita analiza tus datos de {mesLabel(mes)} y te arma un resumen del mes.
+                      </p>
+                    </div>
+
+                    {/* Nota de contexto */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-400 block">
+                        ¿Algo que Monedita deba saber de este mes?
+                      </label>
+                      <textarea
+                        value={contextoUsuario}
+                        onChange={e => setContextoUsuario(e.target.value)}
+                        placeholder="Ej: gasté de más por un viaje, tuve un gasto médico puntual..."
+                        rows={3}
+                        className="input-dark w-full resize-none text-sm leading-relaxed"
+                      />
+                      <p className="text-xs text-zinc-600">
+                        Opcional. La IA lo incorpora al reporte y lo recuerda el próximo mes.
+                      </p>
+                    </div>
+
+                    {generando ? (
+                      <div className="flex flex-col items-center gap-3 py-4">
+                        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-sm font-bold text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
+                      </div>
+                    ) : (
+                      <>
+                        {errorIA && (
+                          <div className="rounded-[14px] px-4 py-3"
+                               style={{ background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.22)' }}>
+                            <p className="text-sm font-semibold" style={{ color: '#fb7185' }}>{errorIA}</p>
+                          </div>
+                        )}
+                        <button
+                          onClick={handleGenerarAnalisis}
+                          disabled={movimientos.length === 0}
+                          className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                          Generar el Resumen de Monedita
+                        </button>
+                        {movimientos.length === 0 && (
+                          <p className="text-sm font-medium text-center text-zinc-600">
+                            No hay movimientos registrados en {mesLabel(mes)}.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )
               ) : null /* Mes pasado con reporte: solo muestra el reporte abajo */}
 
               {/* Reporte generado */}
