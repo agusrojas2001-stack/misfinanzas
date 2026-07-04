@@ -59,7 +59,59 @@ ETAPA DEL MES: CIERRE (días 26-31). El mes está terminando.
 - Si el mes fue bien, decilo claro. Si no, sin drama — "el mes que viene lo ajustamos".`,
 }
 
-export async function generarAnalisis(datos) {
+// Se agrega al system prompt cuando hay historial de meses anteriores.
+const DIRECTIVA_HISTORIAL = `
+
+HISTORIAL DE MESES ANTERIORES:
+Usá los datos históricos del final del mensaje para:
+- Detectar tendencias reales: qué categorías vienen subiendo o bajando mes a mes
+- Comparar con números concretos: "este mes gastaste X% más/menos en Y que el promedio"
+- Recordar contexto que el usuario ya explicó — si antes aclaró algo puntual, no lo trates como patrón nuevo
+- Hacer cada reporte distinto: si el mes pasado señalaste algo y mejoró, decilo; si empeoró, también
+- Con 3+ meses de datos los patrones son confiables — usá eso, no repitas observaciones genéricas
+El historial viene en la sección "=== HISTORIAL ===" al final del mensaje.`
+
+function buildHistorialText(reportesAnteriores) {
+  const secciones = reportesAnteriores.map(r => {
+    const d = r.resumen_datos ?? {}
+    const mesDate = r.mes ? new Date(r.mes + 'T12:00:00') : null
+    const label = mesDate
+      ? mesDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+      : 'mes anterior'
+    const titulo = label.charAt(0).toUpperCase() + label.slice(1)
+
+    const lineas = [`### ${titulo}`]
+
+    if (d.ingresos != null) {
+      lineas.push(
+        `Ingresos: $${Number(d.ingresos).toLocaleString('es-AR')} | ` +
+        `Gastos: $${Number(d.gastos ?? 0).toLocaleString('es-AR')} | ` +
+        `Ahorro: $${Number(d.ahorro ?? 0).toLocaleString('es-AR')}`
+      )
+    }
+
+    const cats = (d.gastos_por_categoria ?? []).slice(0, 6)
+    if (cats.length > 0) {
+      lineas.push('Categorías:')
+      cats.forEach(c =>
+        lineas.push(`  - ${c.categoria}: $${Number(c.monto).toLocaleString('es-AR')} (${c.tipo})`)
+      )
+    }
+
+    if (r.contexto_usuario) lineas.push(`Contexto: "${r.contexto_usuario}"`)
+    if (Array.isArray(r.preguntas)) {
+      r.preguntas.forEach(p => {
+        if (p.respuesta) lineas.push(`Q: ${p.pregunta} → A: ${p.respuesta}`)
+      })
+    }
+
+    return lineas.join('\n')
+  })
+
+  return `\n\n=== HISTORIAL (${reportesAnteriores.length} meses anteriores) ===\n${secciones.join('\n\n')}`
+}
+
+export async function generarAnalisis(datos, reportesAnteriores = []) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) {
     throw new Error('La clave de IA no está configurada. Agregá VITE_ANTHROPIC_API_KEY en las variables de entorno de Vercel.')
@@ -72,9 +124,11 @@ export async function generarAnalisis(datos) {
 
   const etapa = getEtapaMes()
   const dia = new Date().getDate()
-  const systemPrompt = BASE_PROMPT + DIRECTIVAS_ETAPA[etapa]
+  const tieneHistorial = reportesAnteriores.length > 0
+  const systemPrompt = BASE_PROMPT + DIRECTIVAS_ETAPA[etapa] + (tieneHistorial ? DIRECTIVA_HISTORIAL : '')
 
-  const payload = `Hoy es día ${dia} del mes (etapa: ${etapa}).\n\nAnalizá mis finanzas del mes:\n\n${JSON.stringify(datos, null, 2)}`
+  const historialText = tieneHistorial ? buildHistorialText(reportesAnteriores) : ''
+  const payload = `Hoy es día ${dia} del mes (etapa: ${etapa}).\n\nAnalizá mis finanzas del mes:\n\n${JSON.stringify(datos, null, 2)}${historialText}`
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',

@@ -264,8 +264,25 @@ export default function AnalisisPage() {
         })),
       }
 
-      const texto = await generarAnalisis(payload)
-      const { error } = await guardar({ mes, contenido: texto })
+      // Snapshot del mes para alimentar reportes futuros
+      const resumenDatosActual = {
+        ingresos: totalIngresos,
+        gastos: totalGastos,
+        ahorro: totalAhorro,
+        balance,
+        gastos_fijos: totalFijos,
+        gastos_variables: totalVariables,
+        gastos_por_categoria: gastosPorCategoria,
+      }
+
+      // Últimos 6 reportes anteriores con sus datos históricos
+      const reportesAnteriores = reportes
+        .filter(r => r.mes && !r.mes.startsWith(mes))
+        .sort((a, b) => b.mes.localeCompare(a.mes))
+        .slice(0, 6)
+
+      const texto = await generarAnalisis(payload, reportesAnteriores)
+      const { error } = await guardar({ mes, contenido: texto, resumen_datos: resumenDatosActual })
       if (error) throw new Error(error)
       setReporteActual({ contenido: texto, generado_at: new Date().toISOString() })
     } catch (e) {
