@@ -71,7 +71,7 @@ function renderLinea(line, i) {
   )
 }
 
-export default function ReporteMensual({ contenido, generadoAt, onCerrar, expression = 'contenta' }) {
+export default function ReporteMensual({ contenido, generadoAt, expression = 'contenta' }) {
   const fecha = generadoAt
     ? new Date(generadoAt).toLocaleDateString('es-AR', {
         day: 'numeric', month: 'long', year: 'numeric',
@@ -95,17 +95,7 @@ export default function ReporteMensual({ contenido, generadoAt, onCerrar, expres
             Análisis con IA
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {fecha && <p className="text-xs text-zinc-600">{fecha}</p>}
-          {onCerrar && (
-            <button
-              onClick={onCerrar}
-              className="w-7 h-7 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 flex items-center justify-center text-violet-400 hover:text-violet-300 text-xs transition-all"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+        {fecha && <p className="text-xs text-zinc-600">{fecha}</p>}
       </div>
 
       {/* Divisor */}

@@ -338,6 +338,37 @@ export async function evaluarReglas(userId) {
       }
     }
 
+    // --------------------------------------------------------
+    // REGLA 8: Reporte del mes anterior disponible (días 1-7)
+    // --------------------------------------------------------
+    if (now.getDate() <= 7) {
+      const prevMesDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const prevMes = `${prevMesDate.getFullYear()}-${String(prevMesDate.getMonth() + 1).padStart(2, '0')}`
+      const prevMesLabel = MESES[prevMesDate.getMonth()]
+
+      const { data: reporteExistente } = await supabase
+        .from('reportes_mensuales')
+        .select('id')
+        .eq('user_id', userId)
+        .gte('mes', `${prevMes}-01`)
+        .lte('mes', `${prevMes}-01`)
+        .limit(1)
+
+      if (!reporteExistente || reporteExistente.length === 0) {
+        await crearSiNueva(
+          {
+            tipo: 'info',
+            emoji: '✨',
+            titulo: `Ya podés ver tu resumen de ${prevMesLabel}`,
+            mensaje: `El Resumen de Monedita de ${prevMesLabel} ya está disponible. Entrá a Análisis y generalo.`,
+            accion_url: '/analisis',
+          },
+          `reporte_disponible_${prevMes}`,
+          30
+        )
+      }
+    }
+
     // Los recordatorios manuales se procesan en procesarRecordatorios() sin cooldown
   } catch (err) {
     console.error('[evaluarReglas] Error:', err)

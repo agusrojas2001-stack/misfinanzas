@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-const LIMITE_MES = 3
-
 export function useReportes() {
   const [reportes, setReportes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,13 +30,12 @@ export function useReportes() {
     return { error: null }
   }
 
-  function usadosEnMes(mes) {
-    return reportes.filter(r => r.mes?.startsWith(mes)).length
-  }
-
+  // Un solo reporte por mes, disponible solo a partir del mes siguiente
   function puedeGenerar(mes) {
-    return usadosEnMes(mes) < LIMITE_MES
+    const now = new Date()
+    const mesActual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    return mes < mesActual && !reportes.some(r => r.mes?.startsWith(mes))
   }
 
-  return { reportes, loading, guardar, usadosEnMes, puedeGenerar, LIMITE_MES, refetch: fetch }
+  return { reportes, loading, guardar, puedeGenerar, refetch: fetch }
 }

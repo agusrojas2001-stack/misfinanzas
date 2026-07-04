@@ -73,7 +73,7 @@ export default function AnalisisPage() {
   const { movimientos, loading }      = useMovimientos(mes)
   const { presupuestos }              = usePresupuesto(mes)
   const { metas }                     = useMetas()
-  const { reportes, guardar, usadosEnMes, puedeGenerar, LIMITE_MES } = useReportes()
+  const { reportes, guardar } = useReportes()
   const [dataMeses, setDataMeses]     = useState([])
   const [movsPrev, setMovsPrev]       = useState([])
 
@@ -204,8 +204,6 @@ export default function AnalisisPage() {
   }, {})
 
   // ── IA helpers ─────────────────────────────────────────────────
-  const usados = usadosEnMes(mes)
-  const puedeGen = puedeGenerar(mes)
   const monoExpression = balance >= 0 ? 'contenta' : 'tranqui'
 
   async function handleGenerarAnalisis() {
@@ -507,10 +505,24 @@ export default function AnalisisPage() {
               )}
 
               {/* Sección IA */}
-              <div className="rounded-[18px] p-5 space-y-4"
-                   style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.25)' }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+              {esMesActual ? (
+                // Mes actual: el reporte aún no está disponible
+                <div className="rounded-[18px] p-5 space-y-2"
+                     style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.12)' }}>
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={13} className="text-violet-400/40" />
+                    <p className="text-xs font-black uppercase tracking-widest text-violet-400/40">Análisis IA</p>
+                  </div>
+                  <h3 className="text-base font-black text-zinc-500">Resumen de Monedita</h3>
+                  <p className="text-sm font-normal text-zinc-600 leading-relaxed">
+                    El resumen de este mes estará disponible a partir del 1° de {mesLabel(mesSiguiente(mes))}.
+                  </p>
+                </div>
+              ) : !reporteActual ? (
+                // Mes pasado sin reporte: mostrar botón de generación
+                <div className="rounded-[18px] p-5 space-y-4"
+                     style={{ background: '#18181b', border: '1px solid rgba(139,92,246,.25)' }}>
+                  <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Sparkles size={13} className="text-violet-400" />
                       <p className="text-xs font-black uppercase tracking-widest text-violet-400">Análisis IA</p>
@@ -519,68 +531,46 @@ export default function AnalisisPage() {
                       Generar el Resumen de Monedita
                     </h3>
                     <p className="text-sm font-normal text-zinc-400 mt-1 leading-relaxed">
-                      Monedita analiza tus datos y te arma un resumen del mes.
+                      Monedita analiza tus datos de {mesLabel(mes)} y te arma un resumen del mes.
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className={`text-sm font-black ${usados >= LIMITE_MES ? 'text-rose-400' : 'text-zinc-300'}`}>
-                      {usados}/{LIMITE_MES}
-                    </p>
-                    <p className="text-xs text-zinc-600">este mes</p>
-                  </div>
+
+                  {generando ? (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm font-bold text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
+                    </div>
+                  ) : (
+                    <>
+                      {errorIA && (
+                        <div className="rounded-[14px] px-4 py-3"
+                             style={{ background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.22)' }}>
+                          <p className="text-sm font-semibold" style={{ color: '#fb7185' }}>{errorIA}</p>
+                        </div>
+                      )}
+                      <button
+                        onClick={handleGenerarAnalisis}
+                        disabled={movimientos.length === 0}
+                        className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                        Generar el Resumen de Monedita
+                      </button>
+                      {movimientos.length === 0 && (
+                        <p className="text-sm font-medium text-center text-zinc-600">
+                          No hay movimientos registrados en {mesLabel(mes)}.
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
+              ) : null /* Mes pasado con reporte: solo muestra el reporte abajo */}
 
-                {generando ? (
-                  <div className="flex flex-col items-center gap-3 py-4">
-                    <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-sm font-bold text-violet-300 animate-pulse">{LOADER_MSGS[loaderMsg]}</p>
-                  </div>
-                ) : (
-                  <>
-                    {errorIA && (
-                      <div className="rounded-[14px] px-4 py-3"
-                           style={{ background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.22)' }}>
-                        <p className="text-sm font-semibold" style={{ color: '#fb7185' }}>{errorIA}</p>
-                      </div>
-                    )}
-                    <button
-                      onClick={handleGenerarAnalisis}
-                      disabled={!puedeGen || movimientos.length === 0}
-                      className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed">
-                      {usados >= LIMITE_MES
-                        ? `Ya usaste los ${LIMITE_MES} análisis del mes`
-                        : reporteActual
-                        ? 'Generar nuevo resumen'
-                        : 'Generar el Resumen de Monedita'}
-                    </button>
-                    {movimientos.length === 0 && (
-                      <p className="text-sm font-medium text-center text-zinc-600">
-                        Cargá algunos gastos primero.
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {/* Reporte del mes actual */}
+              {/* Reporte generado */}
               {reporteActual && !generando && (
                 <ReporteMensual
                   contenido={reporteActual.contenido}
                   generadoAt={reporteActual.generado_at}
                   expression={monoExpression}
-                  onCerrar={() => setReporteActual(null)}
                 />
-              )}
-
-              {/* Empty state sin reporte */}
-              {!reporteActual && !generando && movimientos.length > 0 && (
-                <div className="flex flex-col items-center gap-3 py-6 text-center">
-                  <img src="/monedita/monedita-tranqui.svg" alt="Monedita"
-                       className="w-14 h-14 object-contain opacity-60" />
-                  <p className="text-sm font-semibold text-zinc-600">
-                    Cuando tengas unos cuantos gastos cargados, acá te muestro cómo viene tu mes.
-                  </p>
-                </div>
               )}
 
               {/* Historial de meses anteriores */}
