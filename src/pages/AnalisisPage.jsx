@@ -78,10 +78,11 @@ export default function AnalisisPage() {
   const [movsPrev, setMovsPrev]       = useState([])
 
   // IA state
-  const [generando, setGenerando]     = useState(false)
-  const [loaderMsg, setLoaderMsg]     = useState(0)
+  const [generando, setGenerando]       = useState(false)
+  const [loaderMsg, setLoaderMsg]       = useState(0)
   const [reporteActual, setReporteActual] = useState(null)
-  const [errorIA, setErrorIA]         = useState(null)
+  const [errorIA, setErrorIA]           = useState(null)
+  const [contextoUsuario, setContextoUsuario] = useState('')
 
   // Fetch 6-month history para evolución de ahorro
   useEffect(() => {
@@ -281,8 +282,9 @@ export default function AnalisisPage() {
         .sort((a, b) => b.mes.localeCompare(a.mes))
         .slice(0, 6)
 
-      const texto = await generarAnalisis(payload, reportesAnteriores)
-      const { error } = await guardar({ mes, contenido: texto, resumen_datos: resumenDatosActual })
+      const contexto = contextoUsuario.trim() || null
+      const texto = await generarAnalisis(payload, reportesAnteriores, contexto)
+      const { error } = await guardar({ mes, contenido: texto, resumen_datos: resumenDatosActual, contexto_usuario: contexto })
       if (error) throw new Error(error)
       setReporteActual({ contenido: texto, generado_at: new Date().toISOString() })
     } catch (e) {
@@ -303,10 +305,10 @@ export default function AnalisisPage() {
 
       {/* Selector de mes */}
       <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2.5">
-        <button onClick={() => { setMes(mesAnterior(mes)); setReporteActual(null) }}
+        <button onClick={() => { setMes(mesAnterior(mes)); setReporteActual(null); setContextoUsuario('') }}
           className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95">‹</button>
         <span className="text-sm font-semibold text-zinc-200">{mesLabel(mes)}</span>
-        <button onClick={() => { setMes(mesSiguiente(mes)); setReporteActual(null) }} disabled={esMesActual}
+        <button onClick={() => { setMes(mesSiguiente(mes)); setReporteActual(null); setContextoUsuario('') }} disabled={esMesActual}
           className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">›</button>
       </div>
 
@@ -549,6 +551,23 @@ export default function AnalisisPage() {
                     </h3>
                     <p className="text-sm font-normal text-zinc-400 mt-1 leading-relaxed">
                       Monedita analiza tus datos de {mesLabel(mes)} y te arma un resumen del mes.
+                    </p>
+                  </div>
+
+                  {/* Nota de contexto */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-400 block">
+                      ¿Algo que Monedita deba saber de este mes?
+                    </label>
+                    <textarea
+                      value={contextoUsuario}
+                      onChange={e => setContextoUsuario(e.target.value)}
+                      placeholder="Ej: gasté de más por un viaje, tuve un gasto médico puntual..."
+                      rows={3}
+                      className="input-dark w-full resize-none text-sm leading-relaxed"
+                    />
+                    <p className="text-xs text-zinc-600">
+                      Opcional. La IA lo incorpora al reporte y lo recuerda el próximo mes.
                     </p>
                   </div>
 

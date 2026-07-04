@@ -17,7 +17,7 @@ export function useReportes() {
 
   useEffect(() => { fetch() }, [fetch])
 
-  async function guardar({ mes, contenido, resumen_datos = null }) {
+  async function guardar({ mes, contenido, resumen_datos = null, contexto_usuario = null }) {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('reportes_mensuales').insert({
       user_id: user.id,
@@ -25,6 +25,7 @@ export function useReportes() {
       contenido,
       modelo_usado: 'claude-sonnet-4-6',
       resumen_datos,
+      contexto_usuario,
     })
     if (error) return { error: error.message }
     await fetch()

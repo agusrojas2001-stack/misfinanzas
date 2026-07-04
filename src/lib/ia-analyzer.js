@@ -111,7 +111,7 @@ function buildHistorialText(reportesAnteriores) {
   return `\n\n=== HISTORIAL (${reportesAnteriores.length} meses anteriores) ===\n${secciones.join('\n\n')}`
 }
 
-export async function generarAnalisis(datos, reportesAnteriores = []) {
+export async function generarAnalisis(datos, reportesAnteriores = [], contextoUsuario = null) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) {
     throw new Error('La clave de IA no está configurada. Agregá VITE_ANTHROPIC_API_KEY en las variables de entorno de Vercel.')
@@ -127,8 +127,9 @@ export async function generarAnalisis(datos, reportesAnteriores = []) {
   const tieneHistorial = reportesAnteriores.length > 0
   const systemPrompt = BASE_PROMPT + DIRECTIVAS_ETAPA[etapa] + (tieneHistorial ? DIRECTIVA_HISTORIAL : '')
 
+  const contextoText = contextoUsuario ? `\n\nNota del usuario sobre este mes: "${contextoUsuario}"` : ''
   const historialText = tieneHistorial ? buildHistorialText(reportesAnteriores) : ''
-  const payload = `Hoy es día ${dia} del mes (etapa: ${etapa}).\n\nAnalizá mis finanzas del mes:\n\n${JSON.stringify(datos, null, 2)}${historialText}`
+  const payload = `Hoy es día ${dia} del mes (etapa: ${etapa}).\n\nAnalizá mis finanzas del mes:\n\n${JSON.stringify(datos, null, 2)}${contextoText}${historialText}`
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
