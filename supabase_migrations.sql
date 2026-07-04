@@ -106,3 +106,57 @@ create policy "reglas_sistema_log_user_policy"
 -- Índice para lookup rápido de reglas por usuario
 create index if not exists reglas_sistema_log_user_regla_idx
   on reglas_sistema_log (user_id, regla_id, disparada_at desc);
+
+
+-- ============================================================
+-- MIGRACIÓN: Reportes mensuales (Resumen de Monedita IA)
+-- Ejecutar en el SQL Editor de Supabase
+-- ============================================================
+
+-- 5. TABLA: reportes_mensuales
+-- Un solo reporte por usuario por mes (UNIQUE user_id + mes).
+-- Inmutable una vez generado: no se sobreescribe, se archiva.
+-- ============================================================
+create table if not exists reportes_mensuales (
+  id               uuid        primary key default gen_random_uuid(),
+  user_id          uuid        not null references auth.users(id) on delete cascade,
+
+  -- Mes al que corresponde el reporte, siempre día 1 (ej: 2025-07-01)
+  mes              date        not null,
+
+  -- Markdown generado por Claude
+  contenido        text        not null,
+
+  -- Modelo de IA usado para poder comparar calidad entre versiones
+  modelo_usado     text        not null default 'claude-sonnet-4-6',
+
+  -- Cuándo se generó
+  generado_at      timestamptz not null default now(),
+
+  -- Nota libre que el usuario escribe antes de pedir el análisis
+  -- (ej: "este mes tuve gasto extra por mudanza")
+  contexto_usuario text,
+
+  -- Preguntas que la IA le hizo al usuario + sus respuestas
+  -- Estructura: [{ "pregunta": "...", "respuesta": "..." }, ...]
+  preguntas        jsonb,
+
+  -- Snapshot de los números del mes al momento de generar
+  -- (para comparar meses futuros sin recalcular)
+  -- Estructura: { ingresos, gastos, ahorro, balance, gastos_por_categoria: [...] }
+  resumen_datos    jsonb,
+
+  -- Un solo reporte por mes por usuario
+  unique (user_id, mes)
+);
+
+alter table reportes_mensuales enable row level security;
+
+create policy "reportes_mensuales_user_policy"
+  on reportes_mensuales
+  for all
+  using (user_id = auth.uid());
+
+-- Índice para listar reportes de un usuario del más reciente al más viejo
+create index if not exists reportes_mensuales_user_mes_idx
+  on reportes_mensuales (user_id, mes desc);
