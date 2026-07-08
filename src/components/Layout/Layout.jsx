@@ -39,18 +39,19 @@ export default function Layout() {
     if (!vv) return
     baseVvH.current = vv.height
 
-    // --vv-top queda SIEMPRE en 0. vv.offsetTop en iOS rebota (rubber-band)
-    // cientos de píxeles por su cuenta durante un scroll con teclado
-    // abierto, incluso a negativos, de forma independiente de si el shell
-    // lo sigue o no — perseguirlo (en vivo o congelado en un valor inicial)
-    // deja al shell corrido de lo que el viewport visual real muestra, y
-    // eso es lo que se ve como negro. El campo enfocado lo trae a la vista
-    // el scrollIntoView del onFocus del <main>, no esto.
+    // --vv-top y --vv-height quedan SIEMPRE fijos (0 y la altura completa).
+    // Ningún input de texto/numérico resize-a el shell ni lo mueve — se
+    // comportan igual que un <select> o <input type="date">, que nunca
+    // tocan nada de esto y se ven perfectos. El teclado nativo se superpone
+    // arriba de todo por su cuenta, sin que nosotros achiquemos ni corramos
+    // nada (eso era lo que generaba la distorsión / negro al scrollear).
+    // --chat-bottom sigue dependiendo de kbOpen porque el chat sí necesita
+    // saber cuándo el teclado está abierto para su propia barra de input.
     function syncShell() {
       const h = vv.height
       const diff = baseVvH.current - h
       const kbOpen = diff > 150
-      const effectiveH = kbOpen ? h : baseVvH.current
+      const effectiveH = baseVvH.current
       const chatBottom = kbOpen
         ? '0px'
         : 'calc(64px + env(safe-area-inset-bottom, 0px))'
@@ -393,12 +394,6 @@ export default function Layout() {
           ? 'flex-1 overflow-hidden flex flex-col min-h-0'
           : 'flex-1 min-h-0 overflow-y-auto overscroll-contain'
         }
-        onFocus={(e) => {
-          const el = e.target
-          if (!['INPUT', 'TEXTAREA'].includes(el.tagName)) return
-          if (['number', 'date', 'time', 'range'].includes(el.type)) return
-          setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 350)
-        }}
       >
         <div className={isChatbot
           ? 'flex-1 flex flex-col min-h-0 max-w-4xl w-full mx-auto'
