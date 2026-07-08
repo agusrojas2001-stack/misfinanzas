@@ -9,3 +9,4 @@ dist/
 vite.config.js.timestamp-*
 .claude/
 design_handoff_mis_numeritos/
+docs/
