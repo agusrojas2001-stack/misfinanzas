@@ -203,7 +203,7 @@ export default function Layout() {
       {/* Backdrop menú */}
       {drawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/60"
           onClick={close}
         />
       )}
@@ -211,7 +211,7 @@ export default function Layout() {
       {/* Backdrop panel de notificaciones */}
       {notifPanelOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/60"
           onClick={() => setNotifPanelOpen(false)}
         />
       )}
@@ -350,7 +350,7 @@ export default function Layout() {
       </div>
 
       {/* Header */}
-      <header className="shrink-0 z-40 bg-zinc-950/90 backdrop-blur-sm border-b border-zinc-900 safe-top">
+      <header className="shrink-0 z-40 bg-zinc-950/90 border-b border-zinc-900 safe-top">
         <div className="flex items-center justify-between px-6 h-11 max-w-4xl mx-auto">
           <button
             onClick={() => navigate('/')}

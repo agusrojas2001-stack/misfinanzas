@@ -72,7 +72,7 @@ export default function PushPermiso() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-28 bg-black/50 backdrop-blur-sm safe-bottom">
+    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-28 bg-black/50 safe-bottom">
       <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 w-full max-w-sm shadow-2xl">
         <p className="text-3xl mb-3">🔔</p>
         <p className="font-bold text-zinc-100 mb-1">¿Querés recibir avisos?</p>

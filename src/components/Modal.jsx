@@ -20,7 +20,7 @@ export default function Modal({ titulo, onClose, actions, children }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pt-4 pb-20
-                    bg-black/60 backdrop-blur-sm"
+                    bg-black/60"
          onClick={onClose}>
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl
                       flex flex-col max-h-[80vh] touch-pan-y"
