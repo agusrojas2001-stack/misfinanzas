@@ -19,11 +19,12 @@ export default function Modal({ titulo, onClose, actions, children }) {
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pt-4 pb-20
+    <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center px-4 pt-4 pb-20
                     bg-black/60"
+         style={{ height: 'var(--vv-height, 100dvh)' }}
          onClick={onClose}>
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl
-                      flex flex-col max-h-[80vh] touch-pan-y"
+                      flex flex-col max-h-[80%] touch-pan-y"
            onClick={e => e.stopPropagation()}>
         {/* Título */}
         <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-zinc-800">
