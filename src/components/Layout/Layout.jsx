@@ -32,7 +32,6 @@ export default function Layout() {
   // ── Keyboard detection (single source of truth) ──────────────
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const baseVvH   = useRef(null)
-  const prevDiff  = useRef(0)
 
   useEffect(() => {
     const vv = window.visualViewport
@@ -59,22 +58,12 @@ export default function Layout() {
         document.documentElement.style.setProperty('--vv-height', effectiveH + 'px')
         document.documentElement.style.setProperty('--vv-top', '0px')
         document.documentElement.style.setProperty('--chat-bottom', chatBottom)
-        console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top: 0 (fijo)', 'diff:', diff,
-          kbOpen ? '(kb)' : '(no-kb)')
-        console.log('[CHAT-BOTTOM] syncShell→', chatBottom, '| diff:', diff)
       })
     }
 
     function onVvResize() {
       const diff = baseVvH.current - vv.height
-      const willOpen   = diff > 150
-      const wasOpen    = prevDiff.current > 150
-      const stateChanged = willOpen !== wasOpen
-      prevDiff.current = diff
-
-      console.log(willOpen ? '[KB-OPEN]' : '[KB-CLOSE]',
-        'vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop, 'diff:', diff,
-        stateChanged ? '(state-change)' : '(rubber-band)')
+      const willOpen = diff > 150
 
       if (willOpen) {
         setKeyboardOpen(true)
@@ -87,23 +76,11 @@ export default function Layout() {
 
     function onFocusOut() { setTimeout(syncShell, 200) }
 
-    function onVvScroll() {
-      const diff = baseVvH.current - vv.height
-      const cs = getComputedStyle(document.documentElement)
-      console.log('[VV-SCROLL] vv.height:', vv.height, 'vv.offsetTop:', vv.offsetTop,
-        'diff:', diff, '--chat-bottom:', cs.getPropertyValue('--chat-bottom').trim())
-      // 'scroll' NUNCA llama a syncShell ni toca --vv-top: es rubber-band
-      // interno, solo se loguea para diagnóstico. Los cambios reales de
-      // teclado (abrir/cerrar) llegan siempre por 'resize'.
-    }
-
     syncShell()
     vv.addEventListener('resize', onVvResize)
-    vv.addEventListener('scroll', onVvScroll)
     document.addEventListener('focusout', onFocusOut)
     return () => {
       vv.removeEventListener('resize', onVvResize)
-      vv.removeEventListener('scroll', onVvScroll)
       document.removeEventListener('focusout', onFocusOut)
     }
   }, [])
@@ -118,11 +95,9 @@ export default function Layout() {
     const max = baseVvH.current
     document.documentElement.style.setProperty('--vv-height', max + 'px')
     document.documentElement.style.setProperty('--vv-top', '0px')
-    console.log('[KB-CLOSE-FORCED] immediate --vv-height:', max, '--vv-top: 0')
     const t = setTimeout(() => {
       document.documentElement.style.setProperty('--vv-height', baseVvH.current + 'px')
       document.documentElement.style.setProperty('--vv-top', '0px')
-      console.log('[KB-CLOSE-FORCED-250] --vv-height:', baseVvH.current, '--vv-top: 0')
     }, 250)
     return () => clearTimeout(t)
   }, [keyboardOpen])
