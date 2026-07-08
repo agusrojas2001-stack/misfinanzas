@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import RegistrarPage from './pages/RegistrarPage'
 import ChatbotPage from './pages/ChatbotPage'
 import MetasPage from './pages/MetasPage'
+import CuotasPage from './pages/CuotasPage'
 import PresupuestoPage from './pages/PresupuestoPage'
 import CategoriasPage from './pages/CategoriasPage'
 import MovimientosPage from './pages/MovimientosPage'
@@ -76,6 +77,7 @@ function AppRoutes() {
         <Route path="registrar" element={<RegistrarPage />} />
         <Route path="chatbot" element={<ChatbotPage />} />
         <Route path="metas" element={<MetasPage />} />
+        <Route path="cuotas" element={<CuotasPage />} />
         <Route path="presupuesto" element={<PresupuestoPage />} />
         <Route path="categorias" element={<CategoriasPage />} />
         <Route path="movimientos" element={<MovimientosPage />} />

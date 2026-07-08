@@ -369,6 +369,45 @@ export async function evaluarReglas(userId) {
       }
     }
 
+    // --------------------------------------------------------
+    // REGLA 9: Cuotas pendientes del mes (primeros 3 días)
+    // --------------------------------------------------------
+    if (now.getDate() <= 3) {
+      const { data: cuotasActivas } = await supabase
+        .from('cuotas')
+        .select('id, monto_cuota')
+        .eq('user_id', userId)
+        .eq('estado', 'activa')
+
+      if (cuotasActivas && cuotasActivas.length > 0) {
+        const { data: pagosDelMes } = await supabase
+          .from('movimientos')
+          .select('cuota_id')
+          .eq('user_id', userId)
+          .not('cuota_id', 'is', null)
+          .gte('fecha', mesInicio)
+          .lte('fecha', hoy)
+
+        const pagadasIds = new Set((pagosDelMes ?? []).map(p => p.cuota_id))
+        const pendientes = cuotasActivas.filter(c => !pagadasIds.has(c.id))
+
+        if (pendientes.length > 0) {
+          const totalPendiente = pendientes.reduce((s, c) => s + Number(c.monto_cuota), 0)
+          await crearSiNueva(
+            {
+              tipo: 'recordatorio',
+              emoji: '💳',
+              titulo: 'Cuotas pendientes este mes',
+              mensaje: `Tenés ${pendientes.length} cuota${pendientes.length > 1 ? 's' : ''} pendiente${pendientes.length > 1 ? 's' : ''} este mes ($${totalPendiente.toLocaleString('es-AR')} total)`,
+              accion_url: '/cuotas',
+            },
+            `cuotas_pendientes_${mes}`,
+            25
+          )
+        }
+      }
+    }
+
     // Los recordatorios manuales se procesan en procesarRecordatorios() sin cooldown
   } catch (err) {
     console.error('[evaluarReglas] Error:', err)

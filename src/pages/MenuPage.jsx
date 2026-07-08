@@ -66,6 +66,12 @@ export default function MenuPage() {
           onClick={() => navigate('/recordatorios')}
         />
         <MenuItem
+          emoji="💳"
+          label="Cuotas y pagos"
+          sublabel="Compras en cuotas y pagos pendientes"
+          onClick={() => navigate('/cuotas')}
+        />
+        <MenuItem
           emoji="💰"
           label="Presupuesto mensual"
           sublabel="Definir límites por categoría"

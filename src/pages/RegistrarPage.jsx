@@ -4,7 +4,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCategorias } from '../hooks/useCategorias'
 import { useMetas } from '../hooks/useMetas'
+import { useCuotas } from '../hooks/useCuotas'
 import Header from '../components/Layout/Header'
+import CuotaModal from '../components/Cuotas/CuotaModal'
 
 const TIPOS = [
   { id: 'gasto',   label: 'Gasto',   emoji: '📉', color: 'text-rose-400',    bg: 'bg-rose-500/20   border-rose-500/50'   },
@@ -21,6 +23,7 @@ export default function RegistrarPage() {
   const navigate = useNavigate()
   const { categorias } = useCategorias()
   const { metas } = useMetas()
+  const { cuotas, pagosMes, crear: crearCuota, pagarCuota } = useCuotas()
 
   const [tipo, setTipo]               = useState('gasto')
   const [monto, setMonto]             = useState('')
@@ -33,6 +36,10 @@ export default function RegistrarPage() {
   const [error, setError]             = useState('')
 
   const [selectorAbierto, setSelectorAbierto] = useState(false)
+  const [modoCuotas, setModoCuotas]           = useState(false)
+  const [modalNuevaCuota, setModalNuevaCuota] = useState(false)
+
+  const cuotasActivas = cuotas.filter(c => c.estado === 'activa')
 
   const tipoActual = TIPOS.find(t => t.id === tipo)
   const categoriasFiltradas = categorias.filter(c => c.tipo === tipo && c.activa)
@@ -43,12 +50,28 @@ export default function RegistrarPage() {
     setCategoriaId('')
     setMetaId('')
     setSelectorAbierto(false)
+    setModoCuotas(false)
     setError('')
   }
 
   function seleccionarCategoria(id) {
     setCategoriaId(id)
+    setModoCuotas(false)
     setSelectorAbierto(false)
+  }
+
+  function seleccionarCuotas() {
+    setCategoriaId('')
+    setModoCuotas(true)
+    setSelectorAbierto(false)
+  }
+
+  async function handlePagarCuota(cuota) {
+    setError('')
+    const { error: err } = await pagarCuota(cuota)
+    if (err) { setError(err); return }
+    setExito(true)
+    setTimeout(() => navigate('/'), 1200)
   }
 
   function handleMonto(e) {
@@ -114,22 +137,24 @@ export default function RegistrarPage() {
         </div>
 
         {/* Monto */}
-        <div className="card space-y-2">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
-            ¿Cuánto? (ARS)
-          </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl">$</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="0"
-              value={formatearMonto(monto)}
-              onChange={handleMonto}
-              className="input-dark pl-10 text-3xl font-bold text-center py-4"
-            />
+        {!modoCuotas && (
+          <div className="card space-y-2">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+              ¿Cuánto? (ARS)
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl">$</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={formatearMonto(monto)}
+                onChange={handleMonto}
+                className="input-dark pl-10 text-3xl font-bold text-center py-4"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Selector de categoría */}
         <div className="card space-y-2">
@@ -142,13 +167,15 @@ export default function RegistrarPage() {
             type="button"
             onClick={() => setSelectorAbierto(v => !v)}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all
-              ${categoriaSeleccionada
+              ${(categoriaSeleccionada || modoCuotas)
                 ? 'bg-zinc-800 border-violet-500/50 text-zinc-100'
                 : 'bg-zinc-800 border-zinc-700 text-zinc-500'}
               ${selectorAbierto ? 'border-violet-500' : 'hover:border-zinc-600'}`}
           >
             <span className="flex items-center gap-2 text-sm font-medium">
-              {categoriaSeleccionada
+              {modoCuotas
+                ? <><span className="text-lg">💳</span> Cuotas</>
+                : categoriaSeleccionada
                 ? <><span className="text-lg">{categoriaSeleccionada.emoji}</span> {categoriaSeleccionada.nombre}</>
                 : 'Seleccionar categoría...'}
             </span>
@@ -160,7 +187,7 @@ export default function RegistrarPage() {
           {/* Panel desplegable */}
           {selectorAbierto && (
             <div className="rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
-              {categoriasFiltradas.length === 0 ? (
+              {categoriasFiltradas.length === 0 && tipo !== 'gasto' ? (
                 <p className="text-zinc-500 text-sm px-4 py-3">
                   No hay categorías de {tipoActual.label.toLowerCase()}.
                 </p>
@@ -180,6 +207,19 @@ export default function RegistrarPage() {
                       <span className="text-xs font-medium leading-tight text-center">{cat.nombre}</span>
                     </button>
                   ))}
+                  {tipo === 'gasto' && (
+                    <button
+                      type="button"
+                      onClick={seleccionarCuotas}
+                      className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition-all active:scale-95
+                        ${modoCuotas
+                          ? 'bg-violet-600/30 border-violet-500 text-violet-300'
+                          : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500'}`}
+                    >
+                      <span className="text-2xl">💳</span>
+                      <span className="text-xs font-medium leading-tight text-center">Cuotas</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -198,56 +238,110 @@ export default function RegistrarPage() {
           )}
         </div>
 
-        {/* Descripción */}
-        <div className="card space-y-2">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
-            Descripción (opcional)
-          </label>
-          <input
-            type="text"
-            placeholder={tipo === 'gasto' ? '¿En qué gastaste?' : tipo === 'ingreso' ? '¿De dónde viene?' : '¿Para qué meta?'}
-            value={concepto}
-            onChange={e => setConcepto(e.target.value)}
-            className="input-dark"
-          />
-        </div>
-
-        {/* Vincular a meta (solo ahorro) */}
-        {tipo === 'ahorro' && metas.length > 0 && (
-          <div className="card space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
-              ¿A qué meta va este ahorro? (opcional)
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setMetaId('')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-all
-                  ${!metaId ? 'bg-violet-600/30 border-violet-500 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
-                Sin meta
+        {/* Panel de cuotas */}
+        {modoCuotas && (
+          <div className="card space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+                Cuotas activas
+              </label>
+              <button
+                type="button"
+                onClick={() => setModalNuevaCuota(true)}
+                className="text-violet-400 hover:text-violet-300 text-sm font-medium"
+              >
+                + Nueva cuota
               </button>
-              {metas.map(m => (
-                <button key={m.id} type="button" onClick={() => setMetaId(m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-all
-                    ${metaId === m.id ? 'bg-violet-600/30 border-violet-500 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
-                  {m.emoji} {m.nombre}
-                </button>
-              ))}
             </div>
+
+            {cuotasActivas.length === 0 ? (
+              <p className="text-zinc-500 text-sm py-2">No tenés cuotas activas todavía.</p>
+            ) : (
+              <div className="space-y-2">
+                {cuotasActivas.map(cuota => {
+                  const pagada = pagosMes.has(cuota.id)
+                  return (
+                    <div key={cuota.id} className="flex items-center gap-3 bg-zinc-800/50 rounded-xl px-3 py-2.5">
+                      <span className="text-xl flex-shrink-0">{cuota.categorias?.emoji ?? '💳'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-100 truncate">{cuota.descripcion}</p>
+                        <p className="text-xs text-zinc-500">
+                          {cuota.cuotas_pagadas}/{cuota.total_cuotas} · ${Number(cuota.monto_cuota).toLocaleString('es-AR')}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={pagada || exito}
+                        onClick={() => handlePagarCuota(cuota)}
+                        className={`text-xs font-bold px-3 py-2 rounded-lg flex-shrink-0 transition-all
+                          ${pagada
+                            ? 'bg-emerald-500/15 text-emerald-400 cursor-default'
+                            : 'bg-violet-600 hover:bg-violet-500 text-white active:scale-95'}`}
+                      >
+                        {pagada ? 'Pagada ✓' : 'Pagar esta cuota'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Fecha */}
-        <div className="card space-y-2 overflow-hidden">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
-            Fecha
-          </label>
-          <input
-            type="date"
-            value={fecha}
-            onChange={e => setFecha(e.target.value)}
-            className="input-dark min-w-0 max-w-full"
-            style={{ colorScheme: 'dark' }}
-          />
-        </div>
+        {!modoCuotas && (
+          <>
+            {/* Descripción */}
+            <div className="card space-y-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
+                Descripción (opcional)
+              </label>
+              <input
+                type="text"
+                placeholder={tipo === 'gasto' ? '¿En qué gastaste?' : tipo === 'ingreso' ? '¿De dónde viene?' : '¿Para qué meta?'}
+                value={concepto}
+                onChange={e => setConcepto(e.target.value)}
+                className="input-dark"
+              />
+            </div>
+
+            {/* Vincular a meta (solo ahorro) */}
+            {tipo === 'ahorro' && metas.length > 0 && (
+              <div className="card space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
+                  ¿A qué meta va este ahorro? (opcional)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setMetaId('')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-all
+                      ${!metaId ? 'bg-violet-600/30 border-violet-500 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
+                    Sin meta
+                  </button>
+                  {metas.map(m => (
+                    <button key={m.id} type="button" onClick={() => setMetaId(m.id)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-all
+                        ${metaId === m.id ? 'bg-violet-600/30 border-violet-500 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
+                      {m.emoji} {m.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Fecha */}
+            <div className="card space-y-2 overflow-hidden">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
+                Fecha
+              </label>
+              <input
+                type="date"
+                value={fecha}
+                onChange={e => setFecha(e.target.value)}
+                className="input-dark min-w-0 max-w-full"
+                style={{ colorScheme: 'dark' }}
+              />
+            </div>
+          </>
+        )}
 
         {/* Error */}
         {error && (
@@ -257,16 +351,31 @@ export default function RegistrarPage() {
         )}
 
         {/* Submit */}
-        <button
-          type="submit"
-          disabled={!canSubmit || exito}
-          className={`btn-primary py-4 text-lg transition-all ${
-            exito ? 'bg-emerald-600 hover:bg-emerald-600 border-emerald-600' : ''
-          }`}
-        >
-          {exito ? '✅ ¡Anotado!' : guardando ? 'Guardando...' : `Registrar ${tipoActual.label}`}
-        </button>
+        {!modoCuotas && (
+          <button
+            type="submit"
+            disabled={!canSubmit || exito}
+            className={`btn-primary py-4 text-lg transition-all ${
+              exito ? 'bg-emerald-600 hover:bg-emerald-600 border-emerald-600' : ''
+            }`}
+          >
+            {exito ? '✅ ¡Anotado!' : guardando ? 'Guardando...' : `Registrar ${tipoActual.label}`}
+          </button>
+        )}
       </form>
+
+      {modalNuevaCuota && (
+        <CuotaModal
+          cuota={null}
+          categorias={categorias}
+          onSave={async (datos) => {
+            const result = await crearCuota(datos)
+            if (!result.error) setModalNuevaCuota(false)
+            return result
+          }}
+          onClose={() => setModalNuevaCuota(false)}
+        />
+      )}
     </div>
   )
 }

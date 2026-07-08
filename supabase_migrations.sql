@@ -160,3 +160,46 @@ create policy "reportes_mensuales_user_policy"
 -- Índice para listar reportes de un usuario del más reciente al más viejo
 create index if not exists reportes_mensuales_user_mes_idx
   on reportes_mensuales (user_id, mes desc);
+
+
+-- ============================================================
+-- MIGRACIÓN: Cuotas y pagos recurrentes
+-- Ejecutar en el SQL Editor de Supabase
+-- ============================================================
+
+-- 6. TABLA: cuotas
+-- ============================================================
+create table if not exists cuotas (
+  id                    uuid primary key default gen_random_uuid(),
+  user_id               uuid not null references auth.users(id) on delete cascade,
+  descripcion           text not null,
+  monto_cuota           numeric not null check (monto_cuota > 0),
+  total_cuotas          integer not null check (total_cuotas > 0),
+  cuotas_pagadas        integer not null default 0 check (cuotas_pagadas >= 0),
+  categoria_id          uuid references categorias(id) on delete set null,
+  fecha_primera_cuota   date not null,
+  estado                text not null default 'activa'
+                          check (estado in ('activa', 'pausada', 'completada')),
+  -- Meses (formato 'YYYY-MM') en los que ya se registró el pago de esta cuota,
+  -- para no permitir pagar dos veces el mismo mes.
+  meses_pagados         jsonb not null default '[]'::jsonb,
+  created_at            timestamptz not null default now()
+);
+
+alter table cuotas enable row level security;
+
+create policy "cuotas_user_policy"
+  on cuotas
+  for all
+  using (user_id = auth.uid());
+
+-- Índice para listar cuotas activas de un usuario
+create index if not exists cuotas_user_estado_idx
+  on cuotas (user_id, estado);
+
+-- Vincula cada pago de cuota con su movimiento correspondiente
+alter table movimientos
+  add column if not exists cuota_id uuid references cuotas(id) on delete set null;
+
+create index if not exists movimientos_cuota_idx
+  on movimientos (cuota_id);
