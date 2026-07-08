@@ -4,12 +4,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCategorias } from '../hooks/useCategorias'
 import { parsearMensaje, formatARS } from '../lib/parser'
 import { useKeyboard } from '../contexts/KeyboardContext'
+import { fechaHoyLocal } from '../lib/fecha'
 
 const EMOJIS_RAPIDOS = ['🛒','🍔','🚗','🏠','💊','📱','🎮','👕','✈️','🐾','📚','🎵','💇','🏋️','🎁']
-
-function hoy() {
-  return new Date().toISOString().split('T')[0]
-}
 
 function mesActual() {
   const now = new Date()
@@ -141,7 +138,7 @@ export default function ChatbotPage() {
     addMsg({
       from: 'bot',
       tipo: 'confirmacion',
-      datos: { tipo, monto, categoria: catEncontrada, catsDelTipo, fecha: hoy() },
+      datos: { tipo, monto, categoria: catEncontrada, catsDelTipo, fecha: fechaHoyLocal() },
     })
   }
 

@@ -19,6 +19,24 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // No confiar en el user_id del body: cualquiera con la anon key pública
+    // podría mandar push a nombre de otro usuario. El user_id real sale del
+    // JWT del caller, no del payload.
+    const authHeader = req.headers.get('Authorization') ?? ''
+    const token = authHeader.replace('Bearer ', '')
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     webpush.setVapidDetails(
       Deno.env.get('VAPID_SUBJECT') ?? 'mailto:admin@misnumeritos.com',
       Deno.env.get('VAPID_PUBLIC_KEY')!,
@@ -28,14 +46,9 @@ serve(async (req) => {
     const body = await req.json()
     // Support both direct call and Supabase DB webhook format
     const record = body.record ?? body
-    const { user_id, titulo, mensaje, emoji, url, accion_url } = record
+    const { titulo, mensaje, emoji, url, accion_url } = record
+    const user_id = user.id
     const notifUrl = url ?? accion_url ?? '/'
-
-    if (!user_id) {
-      return new Response(JSON.stringify({ error: 'user_id requerido' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
 
     const { data: subs } = await supabase
       .from('push_subscriptions')

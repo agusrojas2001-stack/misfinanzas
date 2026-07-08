@@ -7,16 +7,13 @@ import { useMetas } from '../hooks/useMetas'
 import { useCuotas } from '../hooks/useCuotas'
 import Header from '../components/Layout/Header'
 import CuotaModal from '../components/Cuotas/CuotaModal'
+import { fechaHoyLocal } from '../lib/fecha'
 
 const TIPOS = [
   { id: 'gasto',   label: 'Gasto',   emoji: '📉', color: 'text-rose-400',    bg: 'bg-rose-500/20   border-rose-500/50'   },
   { id: 'ingreso', label: 'Ingreso', emoji: '📈', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/50' },
   { id: 'ahorro',  label: 'Ahorro',  emoji: '🏦', color: 'text-violet-400',  bg: 'bg-violet-500/20  border-violet-500/50'  },
 ]
-
-function hoy() {
-  return new Date().toISOString().split('T')[0]
-}
 
 export default function RegistrarPage() {
   const { user } = useAuth()
@@ -30,7 +27,7 @@ export default function RegistrarPage() {
   const [categoriaId, setCategoriaId] = useState('')
   const [metaId, setMetaId]           = useState('')
   const [concepto, setConcepto]       = useState('')
-  const [fecha, setFecha]             = useState(hoy())
+  const [fecha, setFecha]             = useState(fechaHoyLocal())
   const [guardando, setGuardando]     = useState(false)
   const [exito, setExito]             = useState(false)
   const [error, setError]             = useState('')

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { fechaHoyLocal } from '../lib/fecha'
 
 function inicioDeMes() {
   const hoy = new Date()
@@ -90,7 +91,7 @@ export function useCuotas() {
       categoria_id: cuota.categoria_id,
       monto: cuota.monto_cuota,
       concepto: `${cuota.descripcion} (cuota ${nuevasPagadas}/${cuota.total_cuotas})`,
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: fechaHoyLocal(),
       cuota_id: cuota.id,
     })
     if (errMov) return { error: errMov.message }

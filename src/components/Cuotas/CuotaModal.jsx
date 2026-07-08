@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import Modal from '../Modal'
-
-function hoy() {
-  return new Date().toISOString().split('T')[0]
-}
+import { fechaHoyLocal } from '../../lib/fecha'
 
 export default function CuotaModal({ cuota, categorias, onSave, onClose }) {
   const editando = !!cuota
@@ -12,7 +9,7 @@ export default function CuotaModal({ cuota, categorias, onSave, onClose }) {
   const [montoCuota, setMontoCuota] = useState(cuota ? String(cuota.monto_cuota) : '')
   const [totalCuotas, setTotalCuotas] = useState(cuota ? String(cuota.total_cuotas) : '')
   const [categoriaId, setCategoriaId] = useState(cuota?.categoria_id ?? '')
-  const [fechaPrimera, setFechaPrimera] = useState(cuota?.fecha_primera_cuota ?? hoy())
+  const [fechaPrimera, setFechaPrimera] = useState(cuota?.fecha_primera_cuota ?? fechaHoyLocal())
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -75,31 +72,33 @@ export default function CuotaModal({ cuota, categorias, onSave, onClose }) {
           </div>
         )}
 
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto por cuota (ARS)</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto por cuota (ARS)</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={montoCuota ? new Intl.NumberFormat('es-AR').format(Number(montoCuota)) : ''}
+                onChange={e => setMontoCuota(e.target.value.replace(/\D/g, ''))}
+                className="input-dark pl-8"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Cantidad de cuotas</label>
             <input
               type="text"
               inputMode="numeric"
-              placeholder="0"
-              value={montoCuota ? new Intl.NumberFormat('es-AR').format(Number(montoCuota)) : ''}
-              onChange={e => setMontoCuota(e.target.value.replace(/\D/g, ''))}
-              className="input-dark pl-8"
+              placeholder="12"
+              value={totalCuotas}
+              onChange={e => setTotalCuotas(e.target.value.replace(/\D/g, ''))}
+              className="input-dark"
             />
           </div>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Cantidad total de cuotas</label>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="12"
-            value={totalCuotas}
-            onChange={e => setTotalCuotas(e.target.value.replace(/\D/g, ''))}
-            className="input-dark"
-          />
         </div>
 
         {!editando && (

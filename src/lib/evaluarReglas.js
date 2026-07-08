@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { enviarPush } from './pushService'
 import { getEtapaMes } from './etapaMes'
+import { fechaHoyLocal } from './fecha'
 
 // ============================================================
 // calcularProximoAviso
@@ -77,7 +78,7 @@ export async function evaluarReglas(userId) {
     const now = new Date()
     const mes = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const mesInicio = `${mes}-01`
-    const hoy = now.toISOString().split('T')[0]
+    const hoy = fechaHoyLocal()
 
     // Nombres de meses en español
     const MESES = [
