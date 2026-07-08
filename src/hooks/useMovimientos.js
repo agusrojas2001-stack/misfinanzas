@@ -26,7 +26,7 @@ export function useMovimientos(mes) {
   useEffect(() => { fetch() }, [fetch])
 
   async function eliminar(id) {
-    await supabase.from('movimientos').delete().eq('id', id)
+    await supabase.rpc('eliminar_movimiento', { p_movimiento_id: id })
     await fetch()
   }
 

@@ -106,7 +106,7 @@ export default function MovimientosPage() {
   }
 
   async function handleEliminar(id) {
-    await supabase.from('movimientos').delete().eq('id', id)
+    await supabase.rpc('eliminar_movimiento', { p_movimiento_id: id })
     setMovimientos(prev => prev.filter(m => m.id !== id))
   }
 

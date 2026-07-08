@@ -203,3 +203,42 @@ alter table movimientos
 
 create index if not exists movimientos_cuota_idx
   on movimientos (cuota_id);
+
+
+-- ============================================================
+-- MIGRACIÓN: revertir cuota al borrar su movimiento
+-- Ejecutar en el SQL Editor de Supabase
+-- ============================================================
+create or replace function eliminar_movimiento(p_movimiento_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_cuota_id uuid;
+  v_user_id  uuid;
+begin
+  select cuota_id, user_id into v_cuota_id, v_user_id
+  from movimientos
+  where id = p_movimiento_id;
+
+  if v_user_id is null or v_user_id <> auth.uid() then
+    raise exception 'No autorizado';
+  end if;
+
+  delete from movimientos where id = p_movimiento_id;
+
+  if v_cuota_id is not null then
+    update cuotas
+    set cuotas_pagadas = greatest(cuotas_pagadas - 1, 0),
+        estado = case
+          when estado = 'completada' and cuotas_pagadas - 1 < total_cuotas then 'activa'
+          else estado
+        end
+    where id = v_cuota_id;
+  end if;
+end;
+$$;
+
+grant execute on function eliminar_movimiento(uuid) to authenticated;
