@@ -91,7 +91,7 @@ const CARD_PAD = { padding: '10px 12px' }
 
 function SaldoCard({ label, monto, cantidad, color, onClick }) {
   return (
-    <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={CARD_PAD} onClick={onClick}>
+    <div className="card flex-1 min-w-0 cursor-pointer active:scale-[0.98] transition-transform" style={CARD_PAD} onClick={onClick}>
       <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide block mb-1.5">{label}</span>
       <p className={`font-extrabold font-num ${color} leading-tight`}
          style={{
@@ -119,7 +119,7 @@ function PresupuestoCard({ gastos, mes, onClick }) {
 
   if (loading) {
     return (
-      <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={PRESUP_STYLE} onClick={onClick}>
+      <div className="card flex-1 min-w-0 cursor-pointer active:scale-[0.98] transition-transform" style={PRESUP_STYLE} onClick={onClick}>
         <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
         <div className="h-4 w-3/4 rounded animate-pulse" style={{ background: 'rgba(139,92,246,.15)' }} />
       </div>
@@ -128,7 +128,7 @@ function PresupuestoCard({ gastos, mes, onClick }) {
 
   if (!general) {
     return (
-      <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={PRESUP_STYLE} onClick={onClick}>
+      <div className="card flex-1 min-w-0 cursor-pointer active:scale-[0.98] transition-transform" style={PRESUP_STYLE} onClick={onClick}>
         <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
         <p className="text-xs mt-1" style={{ color: 'rgba(167,139,250,.5)' }}>Sin presupuesto</p>
       </div>
@@ -145,7 +145,7 @@ function PresupuestoCard({ gastos, mes, onClick }) {
   const montoColor = fillColor   // el disponible adopta el mismo semáforo que la barra
 
   return (
-    <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={PRESUP_STYLE} onClick={onClick}>
+    <div className="card flex-1 min-w-0 cursor-pointer active:scale-[0.98] transition-transform" style={PRESUP_STYLE} onClick={onClick}>
       <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
       <p className="font-extrabold font-num leading-tight"
          style={{
@@ -393,7 +393,7 @@ export default function DashboardPage() {
         <>
           {/* Balance + tarjetas — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="card cursor-pointer hover:border-zinc-700 transition-colors" onClick={() => navigate('/analisis')} style={{ background: 'linear-gradient(150deg,#3b2a6b,#241a47)', borderColor: 'rgba(139,92,246,.35)' }}>
+            <div className="card cursor-pointer active:scale-[0.98] transition-transform" onClick={() => navigate('/analisis')} style={{ background: 'linear-gradient(150deg,#3b2a6b,#241a47)', borderColor: 'rgba(139,92,246,.35)' }}>
               <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">Balance del mes</p>
               <p className={`${balanceFontClass(balance)} font-num font-extrabold tracking-tight ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
                 {formatARS(balance)}
@@ -437,7 +437,7 @@ export default function DashboardPage() {
           {/* Top gastos + Movimientos — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topGastos.length > 0 && (
-              <div className="card space-y-3 cursor-pointer hover:border-zinc-700 transition-colors" onClick={() => navigate('/analisis')}>
+              <div className="card space-y-3 cursor-pointer active:scale-[0.98] transition-transform" onClick={() => navigate('/analisis')}>
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Categorías</p>
                   <h2 className="text-base font-black text-zinc-100">Top gastos del mes</h2>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="card space-y-1 cursor-pointer hover:border-zinc-700 transition-colors" onClick={() => navigate('/movimientos')}>
+            <div className="card space-y-1 cursor-pointer active:scale-[0.98] transition-transform" onClick={() => navigate('/movimientos')}>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-base font-black text-zinc-100">Últimos movimientos</h2>
                 <button onClick={(e) => { e.stopPropagation(); navigate('/movimientos') }}
