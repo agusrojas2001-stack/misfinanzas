@@ -89,9 +89,9 @@ function montoFontSize(monto) {
 
 const CARD_PAD = { padding: '10px 12px' }
 
-function SaldoCard({ label, monto, cantidad, color }) {
+function SaldoCard({ label, monto, cantidad, color, onClick }) {
   return (
-    <div className="card flex-1 min-w-0" style={CARD_PAD}>
+    <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={CARD_PAD} onClick={onClick}>
       <span className="text-xs font-bold text-zinc-500 uppercase tracking-wide block mb-1.5">{label}</span>
       <p className={`font-extrabold font-num ${color} leading-tight`}
          style={{
@@ -113,13 +113,13 @@ const PRESUP_STYLE = {
   borderColor: 'rgba(139,92,246,.35)',
 }
 
-function PresupuestoCard({ gastos, mes }) {
+function PresupuestoCard({ gastos, mes, onClick }) {
   const { presupuestos, loading } = usePresupuesto(mes)
   const general = presupuestos.find(p => p.categoria_id === null)
 
   if (loading) {
     return (
-      <div className="card flex-1 min-w-0" style={PRESUP_STYLE}>
+      <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={PRESUP_STYLE} onClick={onClick}>
         <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
         <div className="h-4 w-3/4 rounded animate-pulse" style={{ background: 'rgba(139,92,246,.15)' }} />
       </div>
@@ -128,7 +128,7 @@ function PresupuestoCard({ gastos, mes }) {
 
   if (!general) {
     return (
-      <div className="card flex-1 min-w-0" style={PRESUP_STYLE}>
+      <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={PRESUP_STYLE} onClick={onClick}>
         <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
         <p className="text-xs mt-1" style={{ color: 'rgba(167,139,250,.5)' }}>Sin presupuesto</p>
       </div>
@@ -145,7 +145,7 @@ function PresupuestoCard({ gastos, mes }) {
   const montoColor = fillColor   // el disponible adopta el mismo semáforo que la barra
 
   return (
-    <div className="card flex-1 min-w-0" style={PRESUP_STYLE}>
+    <div className="card flex-1 min-w-0 cursor-pointer hover:border-zinc-700 transition-colors" style={PRESUP_STYLE} onClick={onClick}>
       <span className="text-xs font-bold uppercase tracking-wide block mb-1.5" style={{ color: '#a78bfa' }}>Presupuesto</span>
       <p className="font-extrabold font-num leading-tight"
          style={{
@@ -393,7 +393,7 @@ export default function DashboardPage() {
         <>
           {/* Balance + tarjetas — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="card" style={{ background: 'linear-gradient(150deg,#3b2a6b,#241a47)', borderColor: 'rgba(139,92,246,.35)' }}>
+            <div className="card cursor-pointer hover:border-zinc-700 transition-colors" onClick={() => navigate('/analisis')} style={{ background: 'linear-gradient(150deg,#3b2a6b,#241a47)', borderColor: 'rgba(139,92,246,.35)' }}>
               <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">Balance del mes</p>
               <p className={`${balanceFontClass(balance)} font-num font-extrabold tracking-tight ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
                 {formatARS(balance)}
@@ -407,10 +407,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" />
-              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto').length}   color="text-rose-400"   />
-              <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" />
-              <PresupuestoCard gastos={totalGastos} mes={mes} />
+              <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" onClick={() => navigate('/movimientos')} />
+              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto').length}   color="text-rose-400"   onClick={() => navigate('/movimientos')} />
+              <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" onClick={() => navigate('/metas')} />
+              <PresupuestoCard gastos={totalGastos} mes={mes} onClick={() => navigate('/presupuesto')} />
             </div>
           </div>
 
@@ -437,7 +437,7 @@ export default function DashboardPage() {
           {/* Top gastos + Movimientos — lado a lado en desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topGastos.length > 0 && (
-              <div className="card space-y-3">
+              <div className="card space-y-3 cursor-pointer hover:border-zinc-700 transition-colors" onClick={() => navigate('/analisis')}>
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-1">Categorías</p>
                   <h2 className="text-base font-black text-zinc-100">Top gastos del mes</h2>
@@ -457,10 +457,10 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="card space-y-1">
+            <div className="card space-y-1 cursor-pointer hover:border-zinc-700 transition-colors" onClick={() => navigate('/movimientos')}>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-base font-black text-zinc-100">Últimos movimientos</h2>
-                <button onClick={() => navigate('/movimientos')}
+                <button onClick={(e) => { e.stopPropagation(); navigate('/movimientos') }}
                   className="text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors">
                   Ver todos →
                 </button>
@@ -493,7 +493,7 @@ export default function DashboardPage() {
                         {m.tipo === 'ingreso' ? '+' : '-'}{formatARS(m.monto)}
                       </span>
                       <button
-                        onClick={() => eliminar(m.id)}
+                        onClick={(e) => { e.stopPropagation(); eliminar(m.id) }}
                         className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-rose-500/20 flex items-center justify-center
                                    text-zinc-600 hover:text-rose-400 text-xs transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                         title="Eliminar"
