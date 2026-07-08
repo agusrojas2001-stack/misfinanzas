@@ -74,7 +74,7 @@ export default function CuotaModal({ cuota, categorias, onSave, onClose }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto por cuota (ARS)</label>
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto por cuota</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
               <input
