@@ -33,34 +33,32 @@ export default function Layout() {
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const baseVvH   = useRef(null)
   const prevDiff  = useRef(0)
-  const stableTop = useRef(0)
 
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     baseVvH.current = vv.height
 
-    // Mueve el shell para que siga al viewport visible en iOS standalone
-    // (iOS empuja el contenido con offsetTop en vez de achicar el viewport).
-    // --vv-top NUNCA lee vv.offsetTop en vivo acá adentro: usa el valor
-    // estable capturado una sola vez cuando el teclado abrió (stableTop).
-    // vv.offsetTop fluctúa (incluso a negativos) durante el rubber-band de
-    // un scroll con teclado abierto — perseguirlo en vivo es lo que corría
-    // el shell fuera de pantalla y dejaba ver el negro de atrás.
+    // --vv-top queda SIEMPRE en 0. vv.offsetTop en iOS rebota (rubber-band)
+    // cientos de píxeles por su cuenta durante un scroll con teclado
+    // abierto, incluso a negativos, de forma independiente de si el shell
+    // lo sigue o no — perseguirlo (en vivo o congelado en un valor inicial)
+    // deja al shell corrido de lo que el viewport visual real muestra, y
+    // eso es lo que se ve como negro. El campo enfocado lo trae a la vista
+    // el scrollIntoView del onFocus del <main>, no esto.
     function syncShell() {
       const h = vv.height
       const diff = baseVvH.current - h
       const kbOpen = diff > 150
-      const t = kbOpen ? Math.max(0, stableTop.current) : 0
       const effectiveH = kbOpen ? h : baseVvH.current
       const chatBottom = kbOpen
         ? '0px'
         : 'calc(64px + env(safe-area-inset-bottom, 0px))'
       requestAnimationFrame(() => {
         document.documentElement.style.setProperty('--vv-height', effectiveH + 'px')
-        document.documentElement.style.setProperty('--vv-top', t + 'px')
+        document.documentElement.style.setProperty('--vv-top', '0px')
         document.documentElement.style.setProperty('--chat-bottom', chatBottom)
-        console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top:', t, 'diff:', diff,
+        console.log('[SYNC] raw:', h, 'effective:', effectiveH, 'top: 0 (fijo)', 'diff:', diff,
           kbOpen ? '(kb)' : '(no-kb)')
         console.log('[CHAT-BOTTOM] syncShell→', chatBottom, '| diff:', diff)
       })
@@ -78,10 +76,6 @@ export default function Layout() {
         stateChanged ? '(state-change)' : '(rubber-band)')
 
       if (willOpen) {
-        // Solo leemos vv.offsetTop acá, en la apertura real del teclado
-        // (stateChanged=true). Mientras siga abierto no se vuelve a leer:
-        // stableTop queda fijo, clampeado a >= 0.
-        if (stateChanged) stableTop.current = Math.max(0, vv.offsetTop)
         setKeyboardOpen(true)
       } else {
         if (vv.height > baseVvH.current) baseVvH.current = vv.height
