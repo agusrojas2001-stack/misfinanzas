@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useCategorias } from '../hooks/useCategorias'
+import { useMetas } from '../hooks/useMetas'
 import { getDolarBlue } from '../lib/dolar'
 import Header from '../components/Layout/Header'
+import EditarMovimientoModal from '../components/Movimientos/EditarMovimientoModal'
+
+const LIMITE_VISIBLE = 5
 
 function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
@@ -22,23 +27,36 @@ export default function DolaresPage() {
   const [dolar, setDolar]                 = useState(null)
   const [pesosInput, setPesosInput]       = useState('')
   const [dolaresInput, setDolaresInput]   = useState('')
+  const [verTodos, setVerTodos]           = useState(false)
+  const [editando, setEditando]           = useState(null)
+
+  const { categorias } = useCategorias()
+  const { metas }       = useMetas()
+
+  const cargarMovimientos = useCallback(async () => {
+    const { data } = await supabase
+      .from('movimientos')
+      .select('id, tipo, monto, categoria_id, concepto, fecha, meta_id, moneda, cotizacion, categorias(nombre, emoji)')
+      .eq('moneda', 'USD')
+      .order('fecha', { ascending: false })
+    setMovimientosUSD(data ?? [])
+  }, [])
 
   useEffect(() => {
     async function cargar() {
-      const [{ data: movs }, dolarHoy] = await Promise.all([
-        supabase
-          .from('movimientos')
-          .select('id, tipo, monto, concepto, fecha, cotizacion, categorias(nombre, emoji)')
-          .eq('moneda', 'USD')
-          .order('fecha', { ascending: false }),
-        getDolarBlue(),
-      ])
-      setMovimientosUSD(movs ?? [])
+      const [, dolarHoy] = await Promise.all([cargarMovimientos(), getDolarBlue()])
       setDolar(dolarHoy)
       setCargado(true)
     }
     cargar()
-  }, [])
+  }, [cargarMovimientos])
+
+  async function guardarMovimiento(id, datos) {
+    const { error } = await supabase.from('movimientos').update(datos).eq('id', id)
+    if (error) return { error: error.message }
+    await cargarMovimientos()
+    return { error: null }
+  }
 
   const ahorrosUSD     = movimientosUSD.filter(m => m.tipo === 'ahorro')
   const totalUSD       = ahorrosUSD.reduce((s, m) => s + Number(m.monto), 0)
@@ -60,6 +78,9 @@ export default function DolaresPage() {
   // Conversor rápido (solo cálculo local, no guarda nada)
   const dolaresCalculados = pesosInput && dolar?.venta ? Number(pesosInput) / dolar.venta : null
   const pesosCalculados   = dolaresInput && dolar?.venta ? Number(dolaresInput) * dolar.venta : null
+
+  const hayMasMovimientos    = movimientosUSD.length > LIMITE_VISIBLE
+  const movimientosVisibles = verTodos ? movimientosUSD : movimientosUSD.slice(0, LIMITE_VISIBLE)
 
   return (
     <div className="page-enter px-4 pt-4 pb-6 space-y-5">
@@ -134,29 +155,44 @@ export default function DolaresPage() {
             {movimientosUSD.length === 0 ? (
               <p className="text-sm text-zinc-500">Todavía no tenés movimientos en dólares.</p>
             ) : (
-              <div className="space-y-2">
-                {movimientosUSD.map(m => (
-                  <div key={m.id} className="flex items-center gap-3 bg-zinc-800/50 rounded-xl px-3 py-2.5">
-                    <span className="text-xl flex-shrink-0">{m.categorias?.emoji ?? '💵'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-zinc-100 truncate">
-                        {m.concepto || m.categorias?.nombre || m.tipo}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {diaLabel(m.fecha)} · cotización {formatARS(m.cotizacion ?? 0)}
-                      </p>
+              <>
+                <div className={`space-y-2 ${verTodos ? 'max-h-[420px] overflow-y-auto pr-1' : ''}`}>
+                  {movimientosVisibles.map(m => (
+                    <div
+                      key={m.id}
+                      onClick={() => setEditando(m)}
+                      className="flex items-center gap-3 bg-zinc-800/50 rounded-xl px-3 py-2.5
+                                 cursor-pointer active:scale-[0.98] transition-transform"
+                    >
+                      <span className="text-xl flex-shrink-0">{m.categorias?.emoji ?? '💵'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-100 truncate">
+                          {m.concepto || m.categorias?.nombre || m.tipo}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {diaLabel(m.fecha)} · cotización {formatARS(m.cotizacion ?? 0)}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className={`text-sm font-extrabold font-num ${COLORES_TIPO[m.tipo]}`}>
+                          {SIGNOS_TIPO[m.tipo]}USD {Number(m.monto).toLocaleString('es-AR')}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {formatARS(Number(m.monto) * Number(m.cotizacion ?? 0))}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className={`text-sm font-extrabold font-num ${COLORES_TIPO[m.tipo]}`}>
-                        {SIGNOS_TIPO[m.tipo]}USD {Number(m.monto).toLocaleString('es-AR')}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {formatARS(Number(m.monto) * Number(m.cotizacion ?? 0))}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {hayMasMovimientos && (
+                  <button
+                    onClick={() => setVerTodos(v => !v)}
+                    className="w-full mt-3 text-sm text-violet-400 hover:text-violet-300 font-medium transition-all"
+                  >
+                    {verTodos ? 'Ver menos' : `Ver todos (${movimientosUSD.length})`}
+                  </button>
+                )}
+              </>
             )}
           </div>
 
@@ -240,6 +276,16 @@ export default function DolaresPage() {
             </div>
           </div>
         </>
+      )}
+
+      {editando && (
+        <EditarMovimientoModal
+          movimiento={editando}
+          categorias={categorias}
+          metas={metas}
+          onSave={guardarMovimiento}
+          onClose={() => setEditando(null)}
+        />
       )}
     </div>
   )
