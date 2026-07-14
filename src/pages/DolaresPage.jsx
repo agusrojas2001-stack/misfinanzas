@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Coins, ArrowLeftRight, Receipt } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getDolarBlue } from '../lib/dolar'
 import Header from '../components/Layout/Header'
@@ -70,7 +69,7 @@ export default function DolaresPage() {
         <div className="py-12 text-center text-zinc-500 text-sm">Cargando...</div>
       ) : (
         <>
-          {/* Tu posición */}
+          {/* Tu posición + Cotización (compacta, en la misma card) */}
           {ahorrosUSD.length === 0 ? (
             <div className="card flex flex-col items-center py-12 text-center border-dashed border-zinc-700">
               <p className="text-4xl mb-3">💵</p>
@@ -86,7 +85,7 @@ export default function DolaresPage() {
               }}
             >
               <div className="flex items-center gap-2 mb-1.5">
-                <DollarSign size={20} strokeWidth={2} className="text-violet-400" />
+                <span className="text-xl">💵</span>
                 <p className="text-xs font-bold text-violet-400 uppercase tracking-wide">Tu posición</p>
               </div>
               <p className="font-num font-extrabold text-4xl text-violet-400">
@@ -104,130 +103,34 @@ export default function DolaresPage() {
                   {gano ? '▲' : '▼'} {formatARS(Math.abs(variacion))} ({variacionPct >= 0 ? '+' : ''}{variacionPct.toFixed(1)}%) {gano ? 'ganado' : 'perdido'}
                 </p>
               )}
+
+              {/* Cotización — compacta, dentro de la misma card */}
+              <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid rgba(139,92,246,.2)' }}>
+                {dolar ? (
+                  <>
+                    <div>
+                      <p className="text-xs text-zinc-400">Dólar blue</p>
+                      {dolar.fechaActualizacion && (
+                        <p className="text-[11px] text-zinc-500">
+                          {new Date(dolar.fechaActualizacion).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-num font-bold text-zinc-100">{formatARS(dolar.venta)}</p>
+                      <p className="text-xs text-zinc-500">compra {formatARS(dolar.compra)}</p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-zinc-500">Cotización no disponible ahora.</p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Rendimiento */}
-          <div
-            className="card"
-            style={
-              rendimientoConocido
-                ? rendimientoGano
-                  ? { background: 'rgba(52,211,153,.06)', borderColor: 'rgba(52,211,153,.25)' }
-                  : { background: 'rgba(251,113,133,.06)', borderColor: 'rgba(251,113,133,.25)' }
-                : undefined
-            }
-          >
-            <div className="flex items-center gap-2 mb-2">
-              {rendimientoConocido
-                ? rendimientoGano
-                  ? <TrendingUp size={18} strokeWidth={2} className="text-emerald-400" />
-                  : <TrendingDown size={18} strokeWidth={2} className="text-rose-400" />
-                : <TrendingUp size={18} strokeWidth={2} className="text-zinc-500" />}
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Rendimiento</p>
-            </div>
-            {comprasUSD.length === 0 ? (
-              <p className="text-sm text-zinc-500">
-                Todavía no tenés compras en dólares para calcular tu rendimiento.
-              </p>
-            ) : ppc != null && dolar?.venta ? (
-              <p className={`text-sm leading-relaxed ${rendimientoGano ? 'text-emerald-400' : 'text-rose-400'}`}>
-                Compraste a un promedio de <span className="font-bold font-num text-zinc-100">{formatARS(ppc)}</span> — hoy{' '}
-                <span className="font-bold font-num text-zinc-100">{formatARS(dolar.venta)}</span> — rendimiento{' '}
-                <span className="font-extrabold">{rendimientoPct >= 0 ? '+' : ''}{rendimientoPct.toFixed(1)}%</span>.
-              </p>
-            ) : (
-              <p className="text-sm text-zinc-400">
-                Compraste a un promedio de {formatARS(ppc)}. No pudimos traer la cotización de hoy para calcular el rendimiento.
-              </p>
-            )}
-          </div>
-
-          {/* Cotizaciones */}
-          <div className="card">
-            <div className="flex items-center gap-2 mb-3">
-              <Coins size={18} strokeWidth={2} className="text-violet-400" />
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Cotizaciones</p>
-            </div>
-            {dolar ? (
-              <>
-                <div className="flex items-center justify-between bg-zinc-800/50 rounded-xl px-3 py-2.5">
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-200">Dólar blue</p>
-                    <p className="text-xs text-zinc-500">compra {formatARS(dolar.compra)}</p>
-                  </div>
-                  <span className="font-num font-extrabold text-lg text-violet-400">{formatARS(dolar.venta)}</span>
-                </div>
-                {dolar.fechaActualizacion && (
-                  <p className="text-xs text-zinc-600 mt-2">
-                    Actualizado {new Date(dolar.fechaActualizacion).toLocaleString('es-AR', {
-                      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-                    })}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-zinc-500">No pudimos traer la cotización ahora. Probá de nuevo más tarde.</p>
-            )}
-          </div>
-
-          {/* Conversor rápido */}
-          <div className="card">
-            <div className="flex items-center gap-2 mb-3">
-              <ArrowLeftRight size={18} strokeWidth={2} className="text-violet-400" />
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Conversor rápido</p>
-            </div>
-            {!dolar?.venta ? (
-              <p className="text-sm text-zinc-500">Sin cotización disponible, no se puede convertir ahora.</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
-                    <span className="text-emerald-400">Pesos</span> → <span className="text-violet-400">Dólares</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold pointer-events-none">$</span>
-                    <input
-                      type="text" inputMode="numeric" placeholder="0"
-                      value={pesosInput ? new Intl.NumberFormat('es-AR').format(Number(pesosInput)) : ''}
-                      onChange={e => setPesosInput(e.target.value.replace(/\D/g, ''))}
-                      className="input-dark pl-9"
-                    />
-                  </div>
-                  {dolaresCalculados != null && (
-                    <p className="text-sm font-semibold text-violet-400">
-                      ≈ USD {dolaresCalculados.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
-                    <span className="text-violet-400">Dólares</span> → <span className="text-emerald-400">Pesos</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold pointer-events-none">US$</span>
-                    <input
-                      type="text" inputMode="numeric" placeholder="0"
-                      value={dolaresInput ? new Intl.NumberFormat('es-AR').format(Number(dolaresInput)) : ''}
-                      onChange={e => setDolaresInput(e.target.value.replace(/\D/g, ''))}
-                      className="input-dark pl-12"
-                    />
-                  </div>
-                  {pesosCalculados != null && (
-                    <p className="text-sm font-semibold text-violet-400">≈ {formatARS(pesosCalculados)}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Movimientos en dólares */}
           <div className="card">
-            <div className="flex items-center gap-2 mb-3">
-              <Receipt size={18} strokeWidth={2} className="text-violet-400" />
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Movimientos en dólares</p>
-            </div>
+            <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide mb-3">Movimientos en dólares</p>
             {movimientosUSD.length === 0 ? (
               <p className="text-sm text-zinc-500">Todavía no tenés movimientos en dólares.</p>
             ) : (
@@ -255,6 +158,86 @@ export default function DolaresPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Rendimiento + Conversor — lado a lado en desktop, apilados en mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Rendimiento */}
+            <div
+              className="card"
+              style={
+                rendimientoConocido
+                  ? rendimientoGano
+                    ? { background: 'rgba(52,211,153,.06)', borderColor: 'rgba(52,211,153,.25)' }
+                    : { background: 'rgba(251,113,133,.06)', borderColor: 'rgba(251,113,133,.25)' }
+                  : undefined
+              }
+            >
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide mb-2">Rendimiento</p>
+              {comprasUSD.length === 0 ? (
+                <p className="text-sm text-zinc-500">
+                  Todavía no tenés compras en dólares para calcular tu rendimiento.
+                </p>
+              ) : ppc != null && dolar?.venta ? (
+                <p className={`text-sm leading-relaxed ${rendimientoGano ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  Compraste a un promedio de <span className="font-bold font-num text-zinc-100">{formatARS(ppc)}</span> — hoy{' '}
+                  <span className="font-bold font-num text-zinc-100">{formatARS(dolar.venta)}</span> — rendimiento{' '}
+                  <span className="font-extrabold">{rendimientoPct >= 0 ? '+' : ''}{rendimientoPct.toFixed(1)}%</span>.
+                </p>
+              ) : (
+                <p className="text-sm text-zinc-400">
+                  Compraste a un promedio de {formatARS(ppc)}. No pudimos traer la cotización de hoy para calcular el rendimiento.
+                </p>
+              )}
+            </div>
+
+            {/* Conversor rápido */}
+            <div className="card">
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide mb-3">Conversor rápido</p>
+              {!dolar?.venta ? (
+                <p className="text-sm text-zinc-500">Sin cotización disponible, no se puede convertir ahora.</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+                      <span className="text-emerald-400">Pesos</span> → <span className="text-violet-400">Dólares</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold pointer-events-none">$</span>
+                      <input
+                        type="text" inputMode="numeric" placeholder="0"
+                        value={pesosInput ? new Intl.NumberFormat('es-AR').format(Number(pesosInput)) : ''}
+                        onChange={e => setPesosInput(e.target.value.replace(/\D/g, ''))}
+                        className="input-dark pl-9"
+                      />
+                    </div>
+                    {dolaresCalculados != null && (
+                      <p className="text-sm font-semibold text-violet-400">
+                        ≈ USD {dolaresCalculados.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+                      <span className="text-violet-400">Dólares</span> → <span className="text-emerald-400">Pesos</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold pointer-events-none">US$</span>
+                      <input
+                        type="text" inputMode="numeric" placeholder="0"
+                        value={dolaresInput ? new Intl.NumberFormat('es-AR').format(Number(dolaresInput)) : ''}
+                        onChange={e => setDolaresInput(e.target.value.replace(/\D/g, ''))}
+                        className="input-dark pl-12"
+                      />
+                    </div>
+                    {pesosCalculados != null && (
+                      <p className="text-sm font-semibold text-violet-400">≈ {formatARS(pesosCalculados)}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

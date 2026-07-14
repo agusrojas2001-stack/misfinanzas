@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
-import { Bell, Menu, Home, MessageCircle, Target, Wallet, TrendingUp, User, LogOut, Tag, CreditCard } from 'lucide-react'
+import { Bell, Menu, Home, MessageCircle, Target, Wallet, TrendingUp, User, LogOut, Tag, CreditCard, DollarSign } from 'lucide-react'
 import BottomNav from './BottomNav'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotificaciones } from '../../hooks/useNotificaciones'
@@ -296,6 +296,12 @@ export default function Layout() {
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
             >
               <CreditCard size={18} strokeWidth={1.8} /> Cuotas y pagos
+            </button>
+            <button
+              onClick={() => navTo('/dolares')}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <DollarSign size={18} strokeWidth={1.8} /> Tus dólares
             </button>
             <button
               onClick={() => navTo('/perfil')}
