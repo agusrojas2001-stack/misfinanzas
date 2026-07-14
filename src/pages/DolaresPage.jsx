@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Coins, ArrowLeftRight } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Coins, ArrowLeftRight, Receipt } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getDolarBlue } from '../lib/dolar'
 import Header from '../components/Layout/Header'
@@ -9,6 +9,13 @@ function formatARS(n) {
     style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0
   }).format(n)
 }
+
+function diaLabel(fechaStr) {
+  return new Date(fechaStr + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+}
+
+const COLORES_TIPO = { gasto: 'text-rose-400', ingreso: 'text-emerald-400', ahorro: 'text-violet-400' }
+const SIGNOS_TIPO  = { gasto: '−', ingreso: '+', ahorro: '+' }
 
 export default function DolaresPage() {
   const [cargado, setCargado]             = useState(false)
@@ -211,6 +218,41 @@ export default function DolaresPage() {
                     <p className="text-sm font-semibold text-violet-400">≈ {formatARS(pesosCalculados)}</p>
                   )}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Movimientos en dólares */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-3">
+              <Receipt size={18} strokeWidth={2} className="text-violet-400" />
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Movimientos en dólares</p>
+            </div>
+            {movimientosUSD.length === 0 ? (
+              <p className="text-sm text-zinc-500">Todavía no tenés movimientos en dólares.</p>
+            ) : (
+              <div className="space-y-2">
+                {movimientosUSD.map(m => (
+                  <div key={m.id} className="flex items-center gap-3 bg-zinc-800/50 rounded-xl px-3 py-2.5">
+                    <span className="text-xl flex-shrink-0">{m.categorias?.emoji ?? '💵'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-zinc-100 truncate">
+                        {m.concepto || m.categorias?.nombre || m.tipo}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {diaLabel(m.fecha)} · cotización {formatARS(m.cotizacion ?? 0)}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className={`text-sm font-extrabold font-num ${COLORES_TIPO[m.tipo]}`}>
+                        {SIGNOS_TIPO[m.tipo]}USD {Number(m.monto).toLocaleString('es-AR')}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {formatARS(Number(m.monto) * Number(m.cotizacion ?? 0))}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
