@@ -15,6 +15,7 @@ import MenuPage from './pages/MenuPage'
 import LoginPage from './pages/LoginPage'
 import RecordatoriosPage from './pages/RecordatoriosPage'
 import OnboardingPage from './pages/OnboardingPage'
+import DolaresPage from './pages/DolaresPage'
 
 function LoadingScreen() {
   return (
@@ -85,6 +86,7 @@ function AppRoutes() {
         <Route path="perfil" element={<ProfilePage />} />
         <Route path="menu" element={<MenuPage />} />
         <Route path="recordatorios" element={<RecordatoriosPage />} />
+        <Route path="dolares" element={<DolaresPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

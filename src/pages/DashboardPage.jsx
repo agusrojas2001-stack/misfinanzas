@@ -169,7 +169,7 @@ function PresupuestoCard({ gastos, mes, onClick }) {
   )
 }
 
-function TusDolaresCard() {
+function TusDolaresCard({ onClick }) {
   const [cargado, setCargado]           = useState(false)
   const [movimientosUSD, setMovUSD]     = useState([])
   const [tieneMetaUSD, setTieneMetaUSD] = useState(false)
@@ -202,7 +202,7 @@ function TusDolaresCard() {
   const gano            = variacion != null && variacion >= 0
 
   return (
-    <div className="card" style={{ borderColor: 'rgba(167,139,250,.35)' }}>
+    <div className="card cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick} style={{ borderColor: 'rgba(167,139,250,.35)' }}>
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-xl">💵</span>
         <span className="text-xs font-bold text-violet-400 uppercase tracking-wide">Tus dólares</span>
@@ -222,7 +222,7 @@ function TusDolaresCard() {
   )
 }
 
-function DolarBadge() {
+function DolarBadge({ onClick }) {
   const [dolar, setDolar] = useState(null)
 
   useEffect(() => {
@@ -232,7 +232,11 @@ function DolarBadge() {
   if (!dolar) return null
 
   return (
-    <div className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-full px-3 py-1.5">
+    <div
+      onClick={onClick}
+      className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-full px-3 py-1.5
+                 cursor-pointer active:scale-[0.97] transition-transform"
+    >
       <span className="text-sm">💵</span>
       <span className="text-xs text-zinc-300 font-medium">
         Blue <span className="text-emerald-400">${dolar.venta?.toLocaleString('es-AR')}</span>
@@ -415,7 +419,7 @@ export default function DashboardPage() {
           <p className="text-sm font-normal text-zinc-400">{saludo},</p>
           <h1 className="text-3xl font-black text-zinc-100">{nombre} 👋</h1>
         </div>
-        <DolarBadge />
+        <DolarBadge onClick={() => navigate('/dolares')} />
       </div>
 
       {/* Navegador de mes */}
@@ -465,7 +469,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <TusDolaresCard />
+          <TusDolaresCard onClick={() => navigate('/dolares')} />
 
           {/* Monedita insight card */}
           {!loading && (

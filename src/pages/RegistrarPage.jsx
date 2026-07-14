@@ -183,7 +183,7 @@ export default function RegistrarPage() {
               </div>
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl pointer-events-none">
                 {moneda === 'USD' ? 'US$' : '$'}
               </span>
               <input
@@ -192,7 +192,7 @@ export default function RegistrarPage() {
                 placeholder="0"
                 value={formatearMonto(monto)}
                 onChange={handleMonto}
-                className="input-dark pl-12 text-3xl font-bold text-center py-4"
+                className={`input-dark ${moneda === 'USD' ? 'pl-16' : 'pl-12'} text-3xl font-bold text-center py-4`}
               />
             </div>
 
@@ -202,14 +202,14 @@ export default function RegistrarPage() {
                   Cotización (a la que compraste/vendiste)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold pointer-events-none">$</span>
                   <input
                     type="text"
                     inputMode="numeric"
                     placeholder="0"
                     value={cotizacion ? new Intl.NumberFormat('es-AR').format(Number(cotizacion)) : ''}
                     onChange={handleCotizacion}
-                    className="input-dark pl-8"
+                    className="input-dark pl-9"
                   />
                 </div>
                 {monto && cotizacion && (
