@@ -6,6 +6,7 @@ import { useMetas } from '../hooks/useMetas'
 import { useReportes } from '../hooks/useReportes'
 import { supabase } from '../lib/supabase'
 import { calcularInsights } from '../lib/insights'
+import { montoEnPesos, montoParaMeta } from '../lib/dolar'
 import { generarAnalisis, detectarPreguntas } from '../lib/ia-analyzer'
 import ReporteMensual from '../components/Insights/ReporteMensual'
 import HistorialReportes from '../components/Insights/HistorialReportes'
@@ -102,16 +103,16 @@ export default function AnalisisPage() {
       })
       const inicio = `${meses[0].key}-01`
       const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
-      const { data } = await supabase.from('movimientos').select('tipo,monto,fecha').gte('fecha', inicio).lte('fecha', fin)
+      const { data } = await supabase.from('movimientos').select('tipo,monto,fecha,moneda,cotizacion').gte('fecha', inicio).lte('fecha', fin)
       setDataMeses(meses.map(({ key }) => {
         const [a, m] = key.split('-').map(Number)
         const mvs = (data ?? []).filter(mv => { const [ma,mm] = mv.fecha.split('-').map(Number); return ma===a && mm===m })
         return {
           key,
           mes: mesLabelCorto(key),
-          Ingresos: mvs.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+mv.monto,0),
-          Gastos:   mvs.filter(mv=>mv.tipo==='gasto').reduce((s,mv)=>s+mv.monto,0),
-          Ahorro:   mvs.filter(mv=>mv.tipo==='ahorro').reduce((s,mv)=>s+mv.monto,0),
+          Ingresos: mvs.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+montoEnPesos(mv),0),
+          Gastos:   mvs.filter(mv=>mv.tipo==='gasto').reduce((s,mv)=>s+montoEnPesos(mv),0),
+          Ahorro:   mvs.filter(mv=>mv.tipo==='ahorro').reduce((s,mv)=>s+montoEnPesos(mv),0),
         }
       }))
     }
@@ -127,7 +128,7 @@ export default function AnalisisPage() {
       const fin = new Date(a, m, 0).toISOString().split('T')[0]
       const { data } = await supabase
         .from('movimientos')
-        .select('tipo, monto, categoria_id, categorias(nombre, emoji)')
+        .select('tipo, monto, categoria_id, moneda, cotizacion, categorias(nombre, emoji)')
         .gte('fecha', inicio).lte('fecha', fin)
       setMovsPrev(data ?? [])
     }
@@ -155,20 +156,20 @@ export default function AnalisisPage() {
 
   const esMesActual = mes === mesActual()
 
-  const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + m.monto, 0)
-  const totalGastos   = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + m.monto, 0)
-  const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + m.monto, 0)
+  const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0)
+  const totalGastos   = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
+  const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + montoEnPesos(m), 0)
   const balance       = totalIngresos - totalGastos - totalAhorro
 
   // ── Comparativa vs mes anterior por categoría ──────────────────
   const gastosCatActual = movimientos.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
     if (!acc[m.categoria_id]) acc[m.categoria_id] = { emoji: m.categorias?.emoji ?? '📦', nombre: m.categorias?.nombre ?? 'Otros', total: 0 }
-    acc[m.categoria_id].total += m.monto
+    acc[m.categoria_id].total += montoEnPesos(m)
     return acc
   }, {})
 
   const gastosCatPrev = movsPrev.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
-    acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + m.monto
+    acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + montoEnPesos(m)
     return acc
   }, {})
 
@@ -184,7 +185,7 @@ export default function AnalisisPage() {
   const semanasGasto = movimientos.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
     const dia = new Date(m.fecha + 'T00:00:00').getDate()
     const semana = Math.ceil(dia / 7)
-    acc[semana] = (acc[semana] ?? 0) + m.monto
+    acc[semana] = (acc[semana] ?? 0) + montoEnPesos(m)
     return acc
   }, {})
 
@@ -240,7 +241,8 @@ export default function AnalisisPage() {
       metas: metas.filter(m => !m.archivada).map(m => ({
         nombre: `${m.emoji} ${m.nombre}`,
         objetivo: m.monto_objetivo,
-        ahorrado: movimientos.filter(mv => mv.tipo === 'ahorro' && mv.meta_id === m.id).reduce((s, mv) => s + mv.monto, 0),
+        ahorrado: movimientos.filter(mv => mv.tipo === 'ahorro' && mv.meta_id === m.id).reduce((s, mv) => s + montoParaMeta(mv, m.moneda ?? 'ARS'), 0),
+        moneda: m.moneda ?? 'ARS',
         fecha_objetivo: m.fecha_objetivo,
       })),
       ultimos_3_meses: dataMeses.slice(-3).map(d => ({ mes: d.mes, ingresos: d.Ingresos, gastos: d.Gastos, ahorro: d.Ahorro })),

@@ -3,6 +3,7 @@ import { usePresupuesto } from '../hooks/usePresupuesto'
 import { useMovimientos } from '../hooks/useMovimientos'
 import { useCategorias } from '../hooks/useCategorias'
 import Modal from '../components/Modal'
+import { montoEnPesos } from '../lib/dolar'
 
 function mesActual() {
   const now = new Date()
@@ -63,10 +64,10 @@ export default function PresupuestoPage() {
   const presupCats    = presupuestos.filter(p => p.categoria_id !== null)
 
   // Gastos reales por categoría del mes
-  const totalGastadoMes = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + m.monto, 0)
+  const totalGastadoMes = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
   const gastosPorCat    = movimientos
     .filter(m => m.tipo === 'gasto')
-    .reduce((acc, m) => { acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + m.monto; return acc }, {})
+    .reduce((acc, m) => { acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + montoEnPesos(m); return acc }, {})
 
   // Categorías de gasto disponibles para agregar presupuesto por categoría
   const catsGasto      = categorias.filter(c => c.tipo === 'gasto' && c.activa)

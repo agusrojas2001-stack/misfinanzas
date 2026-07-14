@@ -8,12 +8,19 @@ import { useCuotas } from '../hooks/useCuotas'
 import Header from '../components/Layout/Header'
 import CuotaModal from '../components/Cuotas/CuotaModal'
 import { fechaHoyLocal } from '../lib/fecha'
+import { getDolarBlue } from '../lib/dolar'
 
 const TIPOS = [
   { id: 'gasto',   label: 'Gasto',   emoji: '📉', color: 'text-rose-400',    bg: 'bg-rose-500/20   border-rose-500/50'   },
   { id: 'ingreso', label: 'Ingreso', emoji: '📈', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/50' },
   { id: 'ahorro',  label: 'Ahorro',  emoji: '🏦', color: 'text-violet-400',  bg: 'bg-violet-500/20  border-violet-500/50'  },
 ]
+
+function formatARS(n) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0
+  }).format(n)
+}
 
 export default function RegistrarPage() {
   const { user } = useAuth()
@@ -24,6 +31,8 @@ export default function RegistrarPage() {
 
   const [tipo, setTipo]               = useState('gasto')
   const [monto, setMonto]             = useState('')
+  const [moneda, setMoneda]           = useState('ARS')
+  const [cotizacion, setCotizacion]   = useState('')
   const [categoriaId, setCategoriaId] = useState('')
   const [metaId, setMetaId]           = useState('')
   const [concepto, setConcepto]       = useState('')
@@ -75,6 +84,18 @@ export default function RegistrarPage() {
     setMonto(e.target.value.replace(/\D/g, ''))
   }
 
+  async function handleMoneda(nuevaMoneda) {
+    setMoneda(nuevaMoneda)
+    if (nuevaMoneda === 'USD' && !cotizacion) {
+      const dolar = await getDolarBlue()
+      if (dolar?.venta) setCotizacion(String(Math.round(dolar.venta)))
+    }
+  }
+
+  function handleCotizacion(e) {
+    setCotizacion(e.target.value.replace(/\D/g, ''))
+  }
+
   function formatearMonto(val) {
     if (!val) return ''
     return new Intl.NumberFormat('es-AR').format(Number(val))
@@ -95,6 +116,8 @@ export default function RegistrarPage() {
       concepto:     concepto.trim() || null,
       fecha,
       meta_id:      (tipo === 'ahorro' && metaId) ? metaId : null,
+      moneda,
+      cotizacion:   moneda === 'USD' ? Number(cotizacion) : null,
     })
 
     setGuardando(false)
@@ -108,7 +131,7 @@ export default function RegistrarPage() {
     setTimeout(() => navigate('/'), 1200)
   }
 
-  const canSubmit = monto && categoriaId && !guardando
+  const canSubmit = monto && categoriaId && !guardando && (moneda === 'ARS' || cotizacion)
 
   return (
     <div className="page-enter px-4 pt-4 pb-6">
@@ -136,20 +159,66 @@ export default function RegistrarPage() {
         {/* Monto */}
         {!modoCuotas && (
           <div className="card space-y-2">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
-              ¿Cuánto? (ARS)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
+                ¿Cuánto?
+              </label>
+              <div className="flex rounded-lg border border-zinc-700 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setMoneda('ARS')}
+                  className={`px-3 py-1 text-xs font-bold transition-all
+                    ${moneda === 'ARS' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
+                >
+                  ARS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMoneda('USD')}
+                  className={`px-3 py-1 text-xs font-bold transition-all
+                    ${moneda === 'USD' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
+                >
+                  USD
+                </button>
+              </div>
+            </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl">$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold text-xl">
+                {moneda === 'USD' ? 'US$' : '$'}
+              </span>
               <input
                 type="text"
                 inputMode="numeric"
                 placeholder="0"
                 value={formatearMonto(monto)}
                 onChange={handleMonto}
-                className="input-dark pl-10 text-3xl font-bold text-center py-4"
+                className="input-dark pl-12 text-3xl font-bold text-center py-4"
               />
             </div>
+
+            {moneda === 'USD' && (
+              <div className="space-y-1 pt-1">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
+                  Cotización (a la que compraste/vendiste)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={cotizacion ? new Intl.NumberFormat('es-AR').format(Number(cotizacion)) : ''}
+                    onChange={handleCotizacion}
+                    className="input-dark pl-8"
+                  />
+                </div>
+                {monto && cotizacion && (
+                  <p className="text-xs text-zinc-500">
+                    ≈ {formatARS(Number(monto) * Number(cotizacion))}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -314,10 +383,16 @@ export default function RegistrarPage() {
                     Sin meta
                   </button>
                   {metas.map(m => (
-                    <button key={m.id} type="button" onClick={() => setMetaId(m.id)}
+                    <button key={m.id} type="button"
+                      onClick={() => {
+                        setMetaId(m.id)
+                        // El aporte tiene que ir en la misma moneda que la meta.
+                        if ((m.moneda ?? 'ARS') === 'USD') handleMoneda('USD')
+                        else setMoneda('ARS')
+                      }}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-all
                         ${metaId === m.id ? 'bg-violet-600/30 border-violet-500 text-violet-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
-                      {m.emoji} {m.nombre}
+                      {m.emoji} {m.nombre}{m.moneda === 'USD' ? ' (USD)' : ''}
                     </button>
                   ))}
                 </div>

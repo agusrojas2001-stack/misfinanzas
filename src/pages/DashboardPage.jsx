@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useMovimientos } from '../hooks/useMovimientos'
 import { usePresupuesto } from '../hooks/usePresupuesto'
 import { supabase } from '../lib/supabase'
+import { getDolarBlue, montoEnPesos } from '../lib/dolar'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -168,14 +169,64 @@ function PresupuestoCard({ gastos, mes, onClick }) {
   )
 }
 
+function TusDolaresCard() {
+  const [cargado, setCargado]           = useState(false)
+  const [movimientosUSD, setMovUSD]     = useState([])
+  const [tieneMetaUSD, setTieneMetaUSD] = useState(false)
+  const [dolar, setDolar]               = useState(null)
+
+  useEffect(() => {
+    async function cargar() {
+      const [{ data: movs }, { data: metasUSD }, dolarHoy] = await Promise.all([
+        supabase.from('movimientos').select('tipo, monto, cotizacion').eq('moneda', 'USD'),
+        supabase.from('metas').select('id').eq('moneda', 'USD').eq('archivada', false).limit(1),
+        getDolarBlue(),
+      ])
+      setMovUSD(movs ?? [])
+      setTieneMetaUSD((metasUSD ?? []).length > 0)
+      setDolar(dolarHoy)
+      setCargado(true)
+    }
+    cargar()
+  }, [])
+
+  if (!cargado) return null
+  if (movimientosUSD.length === 0 && !tieneMetaUSD) return null
+
+  const ahorrosUSD      = movimientosUSD.filter(m => m.tipo === 'ahorro')
+  const totalUSD        = ahorrosUSD.reduce((s, m) => s + Number(m.monto), 0)
+  const valorHistorico  = ahorrosUSD.reduce((s, m) => s + Number(m.monto) * Number(m.cotizacion ?? 0), 0)
+  const valorHoy        = dolar?.venta ? totalUSD * dolar.venta : null
+  const variacion       = (valorHoy != null && valorHistorico > 0) ? valorHoy - valorHistorico : null
+  const variacionPct    = (variacion != null && valorHistorico > 0) ? (variacion / valorHistorico) * 100 : null
+  const gano            = variacion != null && variacion >= 0
+
+  return (
+    <div className="card" style={{ borderColor: 'rgba(167,139,250,.35)' }}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-xl">💵</span>
+        <span className="text-xs font-bold text-violet-400 uppercase tracking-wide">Tus dólares</span>
+      </div>
+      <p className="font-num font-extrabold text-2xl text-violet-400">
+        USD {totalUSD.toLocaleString('es-AR')}
+      </p>
+      {valorHoy != null && (
+        <p className="text-sm text-zinc-400 mt-0.5">≈ {formatARS(valorHoy)} hoy</p>
+      )}
+      {variacion != null && (
+        <p className={`text-sm font-semibold mt-2 ${gano ? 'text-emerald-400' : 'text-rose-400'}`}>
+          {gano ? '▲' : '▼'} {formatARS(Math.abs(variacion))} ({variacionPct >= 0 ? '+' : ''}{variacionPct.toFixed(1)}%) {gano ? 'ganado' : 'perdido'} por tener dólares
+        </p>
+      )}
+    </div>
+  )
+}
+
 function DolarBadge() {
   const [dolar, setDolar] = useState(null)
 
   useEffect(() => {
-    fetch('https://dolarapi.com/v1/dolares/blue')
-      .then(r => r.json())
-      .then(setDolar)
-      .catch(() => {})
+    getDolarBlue().then(setDolar)
   }, [])
 
   if (!dolar) return null
@@ -197,7 +248,7 @@ function PieGastos({ movimientos }) {
     movimientos.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
       const key = m.categoria_id
       if (!acc[key]) acc[key] = { name: `${m.categorias?.emoji ?? ''} ${m.categorias?.nombre ?? 'Otros'}`, value: 0 }
-      acc[key].value += m.monto
+      acc[key].value += montoEnPesos(m)
       return acc
     }, {})
   ).sort((a, b) => b.value - a.value)
@@ -296,16 +347,16 @@ export default function DashboardPage() {
       const inicio = `${meses[0].key}-01`
       const finD = new Date(now.getFullYear(), now.getMonth() + 1, 0)
       const fin = finD.toISOString().split('T')[0]
-      const { data } = await supabase.from('movimientos').select('tipo,monto,fecha').gte('fecha',inicio).lte('fecha',fin)
+      const { data } = await supabase.from('movimientos').select('tipo,monto,fecha,moneda,cotizacion').gte('fecha',inicio).lte('fecha',fin)
       setDataMeses(meses.map(({ key, d }) => {
         const [a, m] = key.split('-').map(Number)
         const mvs = (data ?? []).filter(mv => { const [ma,mm] = mv.fecha.split('-').map(Number); return ma===a && mm===m })
         const label = d.toLocaleDateString('es-AR',{month:'short'})
         return {
           mes: label.charAt(0).toUpperCase() + label.slice(1),
-          Ingresos: mvs.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+mv.monto,0),
-          Gastos:   mvs.filter(mv=>mv.tipo==='gasto').reduce((s,mv)=>s+mv.monto,0),
-          Ahorro:   mvs.filter(mv=>mv.tipo==='ahorro').reduce((s,mv)=>s+mv.monto,0),
+          Ingresos: mvs.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+montoEnPesos(mv),0),
+          Gastos:   mvs.filter(mv=>mv.tipo==='gasto').reduce((s,mv)=>s+montoEnPesos(mv),0),
+          Ahorro:   mvs.filter(mv=>mv.tipo==='ahorro').reduce((s,mv)=>s+montoEnPesos(mv),0),
         }
       }))
     }
@@ -315,9 +366,9 @@ export default function DashboardPage() {
   const esMesActual = mes === mesActual()
 
   // Totales
-  const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + m.monto, 0)
-  const totalGastos   = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + m.monto, 0)
-  const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + m.monto, 0)
+  const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0)
+  const totalGastos   = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
+  const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + montoEnPesos(m), 0)
   const balance       = totalIngresos - totalGastos - totalAhorro
   const pctAhorro     = totalIngresos > 0 ? Math.round((totalAhorro / totalIngresos) * 100) : 0
 
@@ -328,7 +379,7 @@ export default function DashboardPage() {
       .reduce((acc, m) => {
         const key = m.categoria_id
         if (!acc[key]) acc[key] = { emoji: m.categorias?.emoji ?? '📦', nombre: m.categorias?.nombre ?? 'Otros', total: 0 }
-        acc[key].total += m.monto
+        acc[key].total += montoEnPesos(m)
         return acc
       }, {})
   ).sort((a, b) => b.total - a.total).slice(0, 3)
@@ -414,6 +465,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          <TusDolaresCard />
+
           {/* Monedita insight card */}
           {!loading && (
             <div className="flex items-center gap-3 px-4 py-3 rounded-[18px]"
@@ -490,7 +543,7 @@ export default function DashboardPage() {
                         : m.tipo === 'ahorro' ? 'text-violet-400'
                         : 'text-rose-400'
                       }`}>
-                        {m.tipo === 'ingreso' ? '+' : '-'}{formatARS(m.monto)}
+                        {m.tipo === 'ingreso' ? '+' : '-'}{m.moneda === 'USD' ? `USD ${Number(m.monto).toLocaleString('es-AR')}` : formatARS(m.monto)}
                       </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); eliminar(m.id) }}

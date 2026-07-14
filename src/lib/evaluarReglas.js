@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { enviarPush } from './pushService'
 import { getEtapaMes } from './etapaMes'
 import { fechaHoyLocal } from './fecha'
+import { montoEnPesos } from './dolar'
 
 // ============================================================
 // calcularProximoAviso
@@ -97,7 +98,7 @@ export async function evaluarReglas(userId) {
     ] = await Promise.all([
       supabase
         .from('movimientos')
-        .select('id, tipo, categoria_id, monto, fecha, meta_id')
+        .select('id, tipo, categoria_id, monto, moneda, cotizacion, fecha, meta_id')
         .eq('user_id', userId)
         .gte('fecha', mesInicio)
         .lte('fecha', hoy),
@@ -178,7 +179,7 @@ export async function evaluarReglas(userId) {
       const gastosPorCategoria = {}
       ;(movimientos ?? []).forEach(m => {
         if (m.tipo === 'gasto' && m.categoria_id) {
-          gastosPorCategoria[m.categoria_id] = (gastosPorCategoria[m.categoria_id] || 0) + Number(m.monto)
+          gastosPorCategoria[m.categoria_id] = (gastosPorCategoria[m.categoria_id] || 0) + montoEnPesos(m)
         }
       })
 

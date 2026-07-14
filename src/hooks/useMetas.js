@@ -9,7 +9,7 @@ export function useMetas() {
     setLoading(true)
     const { data } = await supabase
       .from('metas')
-      .select('*, movimientos(monto)')
+      .select('*, movimientos(monto, moneda, cotizacion)')
       .eq('archivada', false)
       .order('fecha_objetivo', { ascending: true })
     setMetas(data ?? [])
@@ -18,10 +18,10 @@ export function useMetas() {
 
   useEffect(() => { fetch() }, [fetch])
 
-  async function crear({ nombre, emoji, monto_objetivo, fecha_objetivo }) {
+  async function crear({ nombre, emoji, monto_objetivo, fecha_objetivo, moneda }) {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('metas').insert({
-      user_id: user.id, nombre, emoji, monto_objetivo, fecha_objetivo, archivada: false
+      user_id: user.id, nombre, emoji, monto_objetivo, fecha_objetivo, moneda: moneda ?? 'ARS', archivada: false
     })
     if (error) return { error: error.message }
     await fetch()
@@ -33,8 +33,8 @@ export function useMetas() {
     await fetch()
   }
 
-  async function actualizar(id, { nombre, emoji, monto_objetivo, fecha_objetivo }) {
-    const { error } = await supabase.from('metas').update({ nombre, emoji, monto_objetivo, fecha_objetivo }).eq('id', id)
+  async function actualizar(id, { nombre, emoji, monto_objetivo, fecha_objetivo, moneda }) {
+    const { error } = await supabase.from('metas').update({ nombre, emoji, monto_objetivo, fecha_objetivo, moneda: moneda ?? 'ARS' }).eq('id', id)
     if (error) return { error: error.message }
     await fetch()
     return { error: null }

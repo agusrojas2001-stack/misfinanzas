@@ -263,6 +263,11 @@ export const PALABRAS_TIPO = {
   ],
 }
 
+// Palabras que indican que el monto mencionado está en dólares (USD)
+export const PALABRAS_USD = [
+  'usd', 'u$s', 'dolares', 'dólares', 'dolar', 'dólar', 'verdes',
+]
+
 // Palabras de consulta (no registran movimiento)
 export const PALABRAS_CONSULTA = [
   'cuánto gasté', 'cuanto gaste', 'cuánto gaste',

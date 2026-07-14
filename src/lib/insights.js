@@ -1,4 +1,5 @@
 import { getEtapaMes } from './etapaMes'
+import { montoEnPesos, montoParaMeta } from './dolar'
 
 function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
@@ -22,11 +23,11 @@ function alertasPresupuesto(presupuestos, movimientos, mes, etapa) {
   const { diasRestantes, pctMes } = getDiasInfo(mes)
   const insights = []
 
-  const totalGastado = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + m.monto, 0)
+  const totalGastado = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
 
   const gastosPorCat = movimientos
     .filter(m => m.tipo === 'gasto')
-    .reduce((acc, m) => { acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + m.monto; return acc }, {})
+    .reduce((acc, m) => { acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + montoEnPesos(m); return acc }, {})
 
   // ── Presupuesto general ──────────────────────────────────────
   const presupGeneral = presupuestos.find(p => p.categoria_id === null)
@@ -197,7 +198,7 @@ function patronInusualSemanal(movimientos, etapa) {
 
   const porSemana = gastos.reduce((acc, m) => {
     const semana = Math.floor((new Date(m.fecha + 'T00:00:00').getDate() - 1) / 7)
-    acc[semana] = (acc[semana] ?? 0) + m.monto
+    acc[semana] = (acc[semana] ?? 0) + montoEnPesos(m)
     return acc
   }, {})
 
@@ -234,7 +235,10 @@ function proyeccionMetas(metas, dataMeses, etapa) {
 
   const insights = []
   activas.slice(0, 2).forEach(meta => {
-    const ahorrado = (meta.movimientos ?? []).reduce((s, m) => s + m.monto, 0)
+    // El ritmo de ahorro (promedioAhorro) está en pesos; una meta en USD no
+    // es comparable contra eso, así que no proyectamos fecha para esas.
+    if ((meta.moneda ?? 'ARS') === 'USD') return
+    const ahorrado = (meta.movimientos ?? []).reduce((s, m) => s + montoParaMeta(m, 'ARS'), 0)
     const falta = meta.monto_objetivo - ahorrado
     if (falta <= 0) return
 

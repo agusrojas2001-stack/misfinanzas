@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMetas } from '../hooks/useMetas'
 import Modal from '../components/Modal'
+import { getDolarBlue, montoParaMeta } from '../lib/dolar'
 
 function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0
   }).format(n)
+}
+
+function formatMonto(n, moneda) {
+  return moneda === 'USD' ? `USD ${n.toLocaleString('es-AR')}` : formatARS(n)
 }
 
 function mesesHasta(fechaStr) {
@@ -29,10 +34,14 @@ export default function MetasPage() {
   const [nombre, setNombre]     = useState('')
   const [emoji, setEmoji]       = useState('🎯')
   const [montoObj, setMontoObj] = useState('')
+  const [moneda, setMoneda]     = useState('ARS')
   const [fechaObj, setFechaObj] = useState('')
+  const [dolar, setDolar]       = useState(null)
+
+  useEffect(() => { getDolarBlue().then(setDolar) }, [])
 
   function abrirNueva() {
-    setNombre(''); setEmoji('🎯'); setMontoObj(''); setFechaObj(''); setError('')
+    setNombre(''); setEmoji('🎯'); setMontoObj(''); setMoneda('ARS'); setFechaObj(''); setError('')
     setEditando(null)
     setModal('nueva')
   }
@@ -41,6 +50,7 @@ export default function MetasPage() {
     setNombre(meta.nombre)
     setEmoji(meta.emoji)
     setMontoObj(String(meta.monto_objetivo))
+    setMoneda(meta.moneda ?? 'ARS')
     setFechaObj(meta.fecha_objetivo ?? '')
     setError('')
     setEditando(meta)
@@ -55,6 +65,7 @@ export default function MetasPage() {
       emoji,
       monto_objetivo: Number(montoObj),
       fecha_objetivo: fechaObj || null,
+      moneda,
     }
     const { error: err } = modal === 'editar'
       ? await actualizar(editandoMeta.id, datos)
@@ -65,8 +76,10 @@ export default function MetasPage() {
   }
 
   const metasOrdenadas = [...(metas ?? [])].sort((a, b) => {
-    const aL = (a.movimientos ?? []).reduce((s, m) => s + m.monto, 0) >= a.monto_objetivo
-    const bL = (b.movimientos ?? []).reduce((s, m) => s + m.monto, 0) >= b.monto_objetivo
+    const aMoneda = a.moneda ?? 'ARS'
+    const bMoneda = b.moneda ?? 'ARS'
+    const aL = (a.movimientos ?? []).reduce((s, m) => s + montoParaMeta(m, aMoneda), 0) >= a.monto_objetivo
+    const bL = (b.movimientos ?? []).reduce((s, m) => s + montoParaMeta(m, bMoneda), 0) >= b.monto_objetivo
     return aL === bL ? 0 : aL ? -1 : 1
   })
 
@@ -101,7 +114,8 @@ export default function MetasPage() {
       ) : (
         <div className="space-y-3">
           {metasOrdenadas.map(meta => {
-            const montoActual = (meta.movimientos ?? []).reduce((s, m) => s + m.monto, 0)
+            const montoActual  = (meta.movimientos ?? []).reduce((s, m) => s + montoParaMeta(m, meta.moneda ?? 'ARS'), 0)
+            const tieneAporteUSD = (meta.movimientos ?? []).some(m => m.moneda === 'USD')
             const pct     = Math.min(100, Math.round((montoActual / meta.monto_objetivo) * 100))
             const falta   = Math.max(meta.monto_objetivo - montoActual, 0)
             const lograda = montoActual >= meta.monto_objetivo
@@ -194,19 +208,33 @@ export default function MetasPage() {
                 </div>
 
                 {/* Fila 3: montos */}
-                <div className="flex items-baseline justify-between gap-2 mb-3">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
                   <div className="min-w-0 overflow-hidden">
                     <span className="font-num font-extrabold text-zinc-100">
-                      {formatARS(montoActual)}
+                      {formatMonto(montoActual, meta.moneda)}
                     </span>
                     <span className="font-semibold text-zinc-500 text-sm ml-1">
-                      / {formatARS(meta.monto_objetivo)}
+                      / {formatMonto(meta.monto_objetivo, meta.moneda)}
                     </span>
                   </div>
                   <span className="text-sm font-normal text-zinc-400 flex-shrink-0 whitespace-nowrap">
-                    Te faltan {formatARS(falta)}
+                    Te faltan {formatMonto(falta, meta.moneda)}
                   </span>
                 </div>
+
+                {/* Equivalente en pesos al blue de hoy (solo metas en USD) */}
+                {meta.moneda === 'USD' && dolar?.venta && (
+                  <p className="text-xs text-zinc-500 mb-2">
+                    ≈ {formatARS(montoActual * dolar.venta)} hoy
+                  </p>
+                )}
+
+                {/* Equivalente en dólares (meta en ARS con algún aporte en USD) */}
+                {(meta.moneda ?? 'ARS') === 'ARS' && tieneAporteUSD && dolar?.venta && (
+                  <p className="text-xs text-zinc-500 mb-2">
+                    ≈ USD {Math.round(montoActual / dolar.venta).toLocaleString('es-AR')} al dólar de hoy
+                  </p>
+                )}
 
                 {/* Fila 4: proyección mensual */}
                 {porMes !== null && (
@@ -216,7 +244,7 @@ export default function MetasPage() {
                   >
                     <span className="text-xs text-zinc-400">Para llegar en fecha, ahorrá</span>
                     <span className="font-num font-extrabold text-violet-400 flex-shrink-0 whitespace-nowrap">
-                      {formatARS(porMes)}/mes
+                      {formatMonto(porMes, meta.moneda)}/mes
                     </span>
                   </div>
                 )}
@@ -268,14 +296,33 @@ export default function MetasPage() {
                 onChange={e => setNombre(e.target.value)} className="input-dark" autoFocus />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">¿Cuánto querés juntar? (ARS)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">¿Cuánto querés juntar?</label>
+                <div className="flex rounded-lg border border-zinc-700 overflow-hidden">
+                  <button type="button" onClick={() => setMoneda('ARS')}
+                    className={`px-3 py-1 text-xs font-bold transition-all ${moneda === 'ARS' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                    ARS
+                  </button>
+                  <button type="button" onClick={() => setMoneda('USD')}
+                    className={`px-3 py-1 text-xs font-bold transition-all ${moneda === 'USD' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                    USD
+                  </button>
+                </div>
+              </div>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">
+                  {moneda === 'USD' ? 'US$' : '$'}
+                </span>
                 <input type="text" inputMode="numeric" placeholder="0"
                   value={montoObj ? new Intl.NumberFormat('es-AR').format(Number(montoObj)) : ''}
                   onChange={e => setMontoObj(e.target.value.replace(/\D/g, ''))}
                   className="input-dark pl-8" />
               </div>
+              {moneda === 'USD' && dolar?.venta && montoObj && (
+                <p className="text-xs text-zinc-500">
+                  ≈ {formatARS(Number(montoObj) * dolar.venta)} hoy
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">

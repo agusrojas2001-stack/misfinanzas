@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useCategorias } from '../hooks/useCategorias'
 import { useMetas } from '../hooks/useMetas'
 import Modal from '../components/Modal'
+import { montoEnPesos, getDolarBlue } from '../lib/dolar'
 
 function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
@@ -48,6 +49,8 @@ export default function MovimientosPage() {
   // Edit form state
   const [tipo, setTipo]         = useState('gasto')
   const [monto, setMonto]       = useState('')
+  const [moneda, setMoneda]     = useState('ARS')
+  const [cotizacion, setCotizacion] = useState('')
   const [categoriaId, setCatId] = useState('')
   const [concepto, setConcepto] = useState('')
   const [fecha, setFecha]       = useState('')
@@ -69,6 +72,8 @@ export default function MovimientosPage() {
   function abrirEditar(m) {
     setTipo(m.tipo)
     setMonto(String(m.monto))
+    setMoneda(m.moneda ?? 'ARS')
+    setCotizacion(m.cotizacion ? String(m.cotizacion) : '')
     setCatId(m.categoria_id)
     setConcepto(m.concepto ?? '')
     setFecha(m.fecha)
@@ -85,8 +90,17 @@ export default function MovimientosPage() {
     setSelectorAbierto(false)
   }
 
+  async function handleMonedaEdit(nuevaMoneda) {
+    setMoneda(nuevaMoneda)
+    if (nuevaMoneda === 'USD' && !cotizacion) {
+      const dolar = await getDolarBlue()
+      if (dolar?.venta) setCotizacion(String(Math.round(dolar.venta)))
+    }
+  }
+
   async function handleGuardar() {
     if (!monto || !categoriaId) return
+    if (moneda === 'USD' && !cotizacion) return
     setGuardando(true); setError('')
     const { error: err } = await supabase
       .from('movimientos')
@@ -97,6 +111,8 @@ export default function MovimientosPage() {
         concepto: concepto.trim() || null,
         fecha,
         meta_id: (tipo === 'ahorro' && metaId) ? metaId : null,
+        moneda,
+        cotizacion: moneda === 'USD' ? Number(cotizacion) : null,
       })
       .eq('id', editando.id)
     setGuardando(false)
@@ -129,9 +145,9 @@ export default function MovimientosPage() {
 
   // Totales del período filtrado
   const totalFiltrado = {
-    ingresos: movsFiltrados.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + m.monto, 0),
-    gastos:   movsFiltrados.filter(m => m.tipo === 'gasto').reduce((s, m) => s + m.monto, 0),
-    ahorro:   movsFiltrados.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + m.monto, 0),
+    ingresos: movsFiltrados.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0),
+    gastos:   movsFiltrados.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0),
+    ahorro:   movsFiltrados.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + montoEnPesos(m), 0),
   }
 
   // Agrupar por YYYY-MM
@@ -258,7 +274,7 @@ export default function MovimientosPage() {
                       </p>
                     </div>
                     <p className={`font-extrabold font-num text-sm flex-shrink-0 ${COLORES[m.tipo]}`}>
-                      {SIGNOS[m.tipo]}{formatARS(m.monto)}
+                      {SIGNOS[m.tipo]}{m.moneda === 'USD' ? `USD ${Number(m.monto).toLocaleString('es-AR')}` : formatARS(m.monto)}
                     </p>
                     <button
                       onClick={e => { e.stopPropagation(); handleEliminar(m.id) }}
@@ -280,7 +296,7 @@ export default function MovimientosPage() {
           actions={
             <div className="flex gap-3">
               <button type="button" onClick={() => setEditando(null)} className="btn-secondary">Cancelar</button>
-              <button onClick={handleGuardar} disabled={!monto || !categoriaId || guardando} className="btn-primary">
+              <button onClick={handleGuardar} disabled={!monto || !categoriaId || guardando || (moneda === 'USD' && !cotizacion)} className="btn-primary">
                 {guardando ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
@@ -308,14 +324,45 @@ export default function MovimientosPage() {
 
             {/* Monto */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto (ARS)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Monto</label>
+                <div className="flex rounded-lg border border-zinc-700 overflow-hidden">
+                  <button type="button" onClick={() => setMoneda('ARS')}
+                    className={`px-3 py-1 text-xs font-bold transition-all ${moneda === 'ARS' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                    ARS
+                  </button>
+                  <button type="button" onClick={() => handleMonedaEdit('USD')}
+                    className={`px-3 py-1 text-xs font-bold transition-all ${moneda === 'USD' ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                    USD
+                  </button>
+                </div>
+              </div>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">
+                  {moneda === 'USD' ? 'US$' : '$'}
+                </span>
                 <input type="text" inputMode="numeric" placeholder="0" autoFocus
                   value={monto ? new Intl.NumberFormat('es-AR').format(Number(monto)) : ''}
                   onChange={e => setMonto(e.target.value.replace(/\D/g, ''))}
                   className="input-dark pl-8 text-lg font-bold" />
               </div>
+              {moneda === 'USD' && (
+                <div className="space-y-1 pt-1">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
+                    Cotización (a la que compraste/vendiste)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">$</span>
+                    <input type="text" inputMode="numeric" placeholder="0"
+                      value={cotizacion ? new Intl.NumberFormat('es-AR').format(Number(cotizacion)) : ''}
+                      onChange={e => setCotizacion(e.target.value.replace(/\D/g, ''))}
+                      className="input-dark pl-8" />
+                  </div>
+                  {monto && cotizacion && (
+                    <p className="text-xs text-zinc-500">≈ {formatARS(Number(monto) * Number(cotizacion))}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Categoría */}

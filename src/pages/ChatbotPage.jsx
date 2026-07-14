@@ -5,6 +5,7 @@ import { useCategorias } from '../hooks/useCategorias'
 import { parsearMensaje, formatARS } from '../lib/parser'
 import { useKeyboard } from '../contexts/KeyboardContext'
 import { fechaHoyLocal } from '../lib/fecha'
+import { getDolarBlue, montoEnPesos } from '../lib/dolar'
 
 const EMOJIS_RAPIDOS = ['🛒','🍔','🚗','🏠','💊','📱','🎮','👕','✈️','🐾','📚','🎵','💇','🏋️','🎁']
 
@@ -113,7 +114,7 @@ export default function ChatbotPage() {
 
   async function procesarTexto(texto) {
     const resultado = parsearMensaje(texto, dicPersonal)
-    const { tipo, monto, categoria: catNombre, esConsulta } = resultado
+    const { tipo, monto, categoria: catNombre, esConsulta, moneda, cotizacion } = resultado
 
     if (esConsulta) { await responderConsulta(); return }
 
@@ -133,12 +134,18 @@ export default function ChatbotPage() {
       return
     }
 
+    let cotizacionFinal = cotizacion
+    if (moneda === 'USD' && !cotizacionFinal) {
+      const dolar = await getDolarBlue()
+      if (dolar?.venta) cotizacionFinal = Math.round(dolar.venta)
+    }
+
     const catsDelTipo = categorias.filter(c => c.tipo === tipo && c.activa)
     const catEncontrada = matchCategoria(catNombre, catsDelTipo)
     addMsg({
       from: 'bot',
       tipo: 'confirmacion',
-      datos: { tipo, monto, categoria: catEncontrada, catsDelTipo, fecha: fechaHoyLocal() },
+      datos: { tipo, monto, categoria: catEncontrada, catsDelTipo, fecha: fechaHoyLocal(), moneda, cotizacion: cotizacionFinal },
     })
   }
 
@@ -149,7 +156,7 @@ export default function ChatbotPage() {
     const fin = new Date(a, m, 0).toISOString().split('T')[0]
     const { data } = await supabase
       .from('movimientos')
-      .select('tipo, monto, categorias(nombre, emoji)')
+      .select('tipo, monto, moneda, cotizacion, categorias(nombre, emoji)')
       .gte('fecha', inicio).lte('fecha', fin)
 
     if (!data || data.length === 0) {
@@ -157,16 +164,16 @@ export default function ChatbotPage() {
       return
     }
 
-    const ingresos = data.filter(mv => mv.tipo === 'ingreso').reduce((s, mv) => s + mv.monto, 0)
-    const gastos   = data.filter(mv => mv.tipo === 'gasto').reduce((s, mv) => s + mv.monto, 0)
-    const ahorro   = data.filter(mv => mv.tipo === 'ahorro').reduce((s, mv) => s + mv.monto, 0)
+    const ingresos = data.filter(mv => mv.tipo === 'ingreso').reduce((s, mv) => s + montoEnPesos(mv), 0)
+    const gastos   = data.filter(mv => mv.tipo === 'gasto').reduce((s, mv) => s + montoEnPesos(mv), 0)
+    const ahorro   = data.filter(mv => mv.tipo === 'ahorro').reduce((s, mv) => s + montoEnPesos(mv), 0)
     const balance  = ingresos - gastos - ahorro
 
     const porCat = data.filter(mv => mv.tipo === 'gasto').reduce((acc, mv) => {
       const key = mv.categorias?.nombre ?? 'Otros'
       const emoji = mv.categorias?.emoji ?? '📦'
       if (!acc[key]) acc[key] = { emoji, total: 0 }
-      acc[key].total += mv.monto
+      acc[key].total += montoEnPesos(mv)
       return acc
     }, {})
     const topCats = Object.entries(porCat)
@@ -194,15 +201,20 @@ export default function ChatbotPage() {
       monto:        datos.monto,
       concepto:     datos.concepto || null,
       fecha:        datos.fecha,
+      moneda:       datos.moneda ?? 'ARS',
+      cotizacion:   datos.moneda === 'USD' ? datos.cotizacion : null,
     })
     setGuardando(false)
     if (error) {
       addMsg({ from: 'bot', tipo: 'texto', text: 'Uh, no se pudo guardar. Intentá de nuevo.' })
       return
     }
+    const montoLabel = datos.moneda === 'USD'
+      ? `USD ${datos.monto.toLocaleString('es-AR')}`
+      : formatARS(datos.monto)
     addMsg({
       from: 'bot', tipo: 'texto',
-      text: `✅ Anotado. ${TIPOS_LABEL[datos.tipo]} de ${formatARS(datos.monto)} en ${datos.categoria.emoji} ${datos.categoria.nombre}.\n\n¿Anotamos algo más?`,
+      text: `✅ Anotado. ${TIPOS_LABEL[datos.tipo]} de ${montoLabel} en ${datos.categoria.emoji} ${datos.categoria.nombre}.\n\n¿Anotamos algo más?`,
     })
   }
 
@@ -322,6 +334,8 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
   const [catsLocales, setCatsLocales] = useState(datosProp.catsDelTipo)
   const [editandoMonto, setEditandoMonto] = useState(false)
   const [montoStr, setMontoStr] = useState(String(datosProp.monto))
+  const [editandoCotizacion, setEditandoCotizacion] = useState(false)
+  const [cotizacionStr, setCotizacionStr] = useState(String(datosProp.cotizacion ?? ''))
   const [confirmado, setConfirmado] = useState(false)
 
   const [creandoCat, setCreandoCat] = useState(false)
@@ -334,6 +348,12 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
     const val = parseInt(montoStr.replace(/[.,]/g, ''), 10)
     if (!isNaN(val) && val > 0) setDatos(d => ({ ...d, monto: val }))
     setEditandoMonto(false)
+  }
+
+  function aplicarCotizacion() {
+    const val = parseInt(cotizacionStr.replace(/[.,]/g, ''), 10)
+    if (!isNaN(val) && val > 0) setDatos(d => ({ ...d, cotizacion: val }))
+    setEditandoCotizacion(false)
   }
 
   async function guardar() {
@@ -402,13 +422,42 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
               disabled={confirmado}
               className="text-lg font-bold text-zinc-100 hover:text-violet-300 transition-colors disabled:pointer-events-none"
             >
-              {formatARS(datos.monto)}
+              {datos.moneda === 'USD' ? `USD ${datos.monto.toLocaleString('es-AR')}` : formatARS(datos.monto)}
             </button>
           )}
           {!editandoMonto && !confirmado && (
             <span className="text-xs text-zinc-600">✏️ tocá para cambiar</span>
           )}
         </div>
+
+        {datos.moneda === 'USD' && (
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            <span className="text-xs text-zinc-500">Cotización:</span>
+            {editandoCotizacion ? (
+              <input
+                autoFocus
+                type="text"
+                inputMode="numeric"
+                value={cotizacionStr}
+                onChange={e => setCotizacionStr(e.target.value)}
+                onBlur={aplicarCotizacion}
+                onKeyDown={e => e.key === 'Enter' && aplicarCotizacion()}
+                className="w-24 bg-zinc-900 border border-violet-500 rounded-lg px-2 py-1 text-sm text-zinc-100 focus:outline-none"
+              />
+            ) : (
+              <button
+                onClick={() => { setCotizacionStr(String(datos.cotizacion ?? '')); setEditandoCotizacion(true) }}
+                disabled={confirmado}
+                className="text-sm font-semibold text-violet-300 hover:text-violet-200 transition-colors disabled:pointer-events-none"
+              >
+                {datos.cotizacion ? `$${Number(datos.cotizacion).toLocaleString('es-AR')}` : 'poner cotización ✏️'}
+              </button>
+            )}
+            {datos.cotizacion > 0 && (
+              <span className="text-xs text-zinc-500">≈ {formatARS(datos.monto * datos.cotizacion)}</span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="px-4 py-3 space-y-3">
@@ -512,7 +561,7 @@ function ConfirmacionCard({ datos: datosProp, onConfirmar, onCancelar, guardando
             </button>
             <button
               onClick={guardar}
-              disabled={!datos.categoria || guardando}
+              disabled={!datos.categoria || guardando || (datos.moneda === 'USD' && !datos.cotizacion)}
               className="flex-1 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40
                          text-white text-sm font-semibold transition-all">
               {guardando ? '...' : 'Guardar ✓'}

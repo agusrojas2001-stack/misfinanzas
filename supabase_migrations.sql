@@ -242,3 +242,22 @@ end;
 $$;
 
 grant execute on function eliminar_movimiento(uuid) to authenticated;
+
+
+-- ============================================================
+-- MIGRACIÓN: soporte de dólares (USD) en movimientos y metas
+-- Ejecutar en el SQL Editor de Supabase
+-- ============================================================
+
+-- movimientos: moneda del movimiento + cotización histórica (solo si USD)
+alter table movimientos
+  add column if not exists moneda text not null default 'ARS'
+    check (moneda in ('ARS', 'USD')),
+  add column if not exists cotizacion numeric null;
+
+-- metas: moneda del objetivo (ARS o USD)
+alter table metas
+  add column if not exists moneda text not null default 'ARS'
+    check (moneda in ('ARS', 'USD'));
+
+-- No se toca RLS: ambas tablas ya están protegidas por user_id = auth.uid().

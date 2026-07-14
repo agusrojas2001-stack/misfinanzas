@@ -1,4 +1,4 @@
-import { DICCIONARIO_BASE, PALABRAS_TIPO, PALABRAS_CONSULTA } from './diccionario.js'
+import { DICCIONARIO_BASE, PALABRAS_TIPO, PALABRAS_CONSULTA, PALABRAS_USD } from './diccionario.js'
 
 /**
  * Parsea un texto libre y devuelve un objeto con tipo, monto y categoria detectados.
@@ -70,7 +70,19 @@ export function parsearMensaje(texto, diccionarioPersonal = {}) {
     }
   }
 
-  return { tipo, monto, categoria, esConsulta: false }
+  // 4. Detectar señal de dólares y, si viene explícita, la cotización ("a 1500")
+  const esUSD = PALABRAS_USD.some(p => textoNorm.includes(p))
+  let cotizacion = null
+  if (esUSD) {
+    const matchCotizacion = textoNorm.match(/\ba\s*\$?\s*(\d[\d.,]*)/i)
+    if (matchCotizacion) {
+      const raw = matchCotizacion[1].replace(/[.,]/g, '')
+      const val = parseInt(raw, 10)
+      if (!isNaN(val) && val > 0) cotizacion = val
+    }
+  }
+
+  return { tipo, monto, categoria, esConsulta: false, moneda: esUSD ? 'USD' : 'ARS', cotizacion }
 }
 
 export function formatARS(n) {
