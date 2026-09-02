@@ -23,10 +23,10 @@ function alertasPresupuesto(presupuestos, movimientos, mes, etapa) {
   const { diasRestantes, pctMes } = getDiasInfo(mes)
   const insights = []
 
-  const totalGastado = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
+  const totalGastado = movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0)
 
   const gastosPorCat = movimientos
-    .filter(m => m.tipo === 'gasto')
+    .filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro)
     .reduce((acc, m) => { acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + montoEnPesos(m); return acc }, {})
 
   // ── Presupuesto general ──────────────────────────────────────
@@ -193,7 +193,7 @@ function comparacionMesAnterior(dataMeses, mes, etapa) {
 
 // 4. Gasto inusual esta semana
 function patronInusualSemanal(movimientos, etapa) {
-  const gastos = movimientos.filter(m => m.tipo === 'gasto')
+  const gastos = movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro)
   if (gastos.length < 4) return []
 
   const porSemana = gastos.reduce((acc, m) => {

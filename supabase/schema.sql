@@ -32,13 +32,17 @@ CREATE POLICY "users_update_own" ON public.users
 -- 2. TABLA: categorias
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.categorias (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  nombre      TEXT NOT NULL,
-  emoji       TEXT NOT NULL DEFAULT '📦',
-  tipo        TEXT NOT NULL CHECK (tipo IN ('gasto', 'ingreso', 'ahorro')),
-  activa      BOOLEAN DEFAULT TRUE,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  nombre            TEXT NOT NULL,
+  emoji             TEXT NOT NULL DEFAULT '📦',
+  tipo              TEXT NOT NULL CHECK (tipo IN ('gasto', 'ingreso', 'ahorro')),
+  activa            BOOLEAN DEFAULT TRUE,
+  -- Solo aplica a categorías de tipo 'gasto': si es TRUE, sus movimientos
+  -- no se descuentan del total de Gastos del mes ni del presupuesto —
+  -- se restan del pool de ahorro (es plata que ya estaba ahorrada).
+  es_retiro_ahorro  BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.categorias ENABLE ROW LEVEL SECURITY;

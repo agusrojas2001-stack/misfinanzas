@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useMetas } from '../hooks/useMetas'
 import Modal from '../components/Modal'
-import { getDolarBlue, montoParaMeta } from '../lib/dolar'
+import { getDolarBlue, montoParaMeta, montoEnPesos } from '../lib/dolar'
+import { supabase } from '../lib/supabase'
 
 function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
@@ -22,6 +23,53 @@ function mesesHasta(fechaStr) {
 
 function fechaLabel(fechaStr) {
   return new Date(fechaStr + 'T00:00:00').toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+}
+
+// Total histórico ahorrado (todos los aportes, de siempre) neto de los
+// retiros registrados con categorías marcadas "sale de tus ahorros".
+function PoolAhorroCard() {
+  const [datos, setDatos] = useState(null)
+
+  useEffect(() => {
+    async function cargar() {
+      const { data } = await supabase
+        .from('movimientos')
+        .select('tipo, monto, moneda, cotizacion, meta_id, categorias(es_retiro_ahorro)')
+        .in('tipo', ['ahorro', 'gasto'])
+      const movs = data ?? []
+      const contribConMeta = movs.filter(m => m.tipo === 'ahorro' && m.meta_id).reduce((s, m) => s + montoEnPesos(m), 0)
+      const contribLibre   = movs.filter(m => m.tipo === 'ahorro' && !m.meta_id).reduce((s, m) => s + montoEnPesos(m), 0)
+      const retiros        = movs.filter(m => m.tipo === 'gasto' && m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0)
+      setDatos({
+        contribConMeta,
+        retiros,
+        poolLibre: contribLibre - retiros,
+        total: contribConMeta + contribLibre - retiros,
+      })
+    }
+    cargar()
+  }, [])
+
+  if (!datos || (datos.contribConMeta === 0 && datos.poolLibre === 0 && datos.retiros === 0)) return null
+
+  return (
+    <div
+      className="card mb-4"
+      style={{ background: 'linear-gradient(150deg, rgba(109,40,217,.18), rgba(67,20,179,.12))', borderColor: 'rgba(139,92,246,.35)' }}
+    >
+      <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#a78bfa' }}>Pool de ahorro</p>
+      <p className="font-num font-extrabold text-3xl text-zinc-100">{formatARS(datos.total)}</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm">
+        <span className="text-zinc-400">🎯 {formatARS(datos.contribConMeta)} en metas</span>
+        <span className={datos.poolLibre < 0 ? 'text-rose-400 font-semibold' : 'text-zinc-400'}>
+          💰 {formatARS(datos.poolLibre)} libre
+        </span>
+      </div>
+      {datos.retiros > 0 && (
+        <p className="text-xs text-zinc-500 mt-2">Retiraste {formatARS(datos.retiros)} en total.</p>
+      )}
+    </div>
+  )
 }
 
 export default function MetasPage() {
@@ -99,6 +147,8 @@ export default function MetasPage() {
         </button>
       </div>
       <p className="text-sm text-zinc-500 mb-5">¿Para qué estás ahorrando?</p>
+
+      <PoolAhorroCard />
 
       {loading ? (
         <div className="py-12 text-center text-zinc-500 text-sm">Cargando...</div>

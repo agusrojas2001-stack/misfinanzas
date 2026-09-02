@@ -156,7 +156,7 @@ export default function ChatbotPage() {
     const fin = new Date(a, m, 0).toISOString().split('T')[0]
     const { data } = await supabase
       .from('movimientos')
-      .select('tipo, monto, moneda, cotizacion, categorias(nombre, emoji)')
+      .select('tipo, monto, moneda, cotizacion, categorias(nombre, emoji, es_retiro_ahorro)')
       .gte('fecha', inicio).lte('fecha', fin)
 
     if (!data || data.length === 0) {
@@ -165,11 +165,11 @@ export default function ChatbotPage() {
     }
 
     const ingresos = data.filter(mv => mv.tipo === 'ingreso').reduce((s, mv) => s + montoEnPesos(mv), 0)
-    const gastos   = data.filter(mv => mv.tipo === 'gasto').reduce((s, mv) => s + montoEnPesos(mv), 0)
+    const gastos   = data.filter(mv => mv.tipo === 'gasto' && !mv.categorias?.es_retiro_ahorro).reduce((s, mv) => s + montoEnPesos(mv), 0)
     const ahorro   = data.filter(mv => mv.tipo === 'ahorro').reduce((s, mv) => s + montoEnPesos(mv), 0)
     const balance  = ingresos - gastos - ahorro
 
-    const porCat = data.filter(mv => mv.tipo === 'gasto').reduce((acc, mv) => {
+    const porCat = data.filter(mv => mv.tipo === 'gasto' && !mv.categorias?.es_retiro_ahorro).reduce((acc, mv) => {
       const key = mv.categorias?.nombre ?? 'Otros'
       const emoji = mv.categorias?.emoji ?? '📦'
       if (!acc[key]) acc[key] = { emoji, total: 0 }

@@ -20,11 +20,12 @@ function FormCategoria({ inicial, onGuardar, loading }) {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [emoji, setEmoji] = useState(inicial?.emoji ?? '📦')
   const [tipo, setTipo] = useState(inicial?.tipo ?? 'gasto')
+  const [esRetiroAhorro, setEsRetiroAhorro] = useState(inicial?.es_retiro_ahorro ?? false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!nombre.trim()) return
-    await onGuardar({ nombre, emoji, tipo })
+    await onGuardar({ nombre, emoji, tipo, es_retiro_ahorro: esRetiroAhorro })
   }
 
   return (
@@ -98,6 +99,24 @@ function FormCategoria({ inicial, onGuardar, loading }) {
         </div>
       )}
 
+      {/* Retiro de ahorro (solo categorías de gasto) */}
+      {(inicial ? inicial.tipo === 'gasto' : tipo === 'gasto') && (
+        <label className="flex items-start gap-3 bg-zinc-800/60 border border-zinc-700 rounded-xl px-3 py-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={esRetiroAhorro}
+            onChange={e => setEsRetiroAhorro(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-violet-600 flex-shrink-0"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-zinc-200">Sale de tus ahorros</span>
+            <span className="block text-xs text-zinc-500 mt-0.5">
+              No se descuenta del total de gastos del mes — se resta de tu pool de ahorro.
+            </span>
+          </span>
+        </label>
+      )}
+
     </form>
   )
 }
@@ -108,7 +127,12 @@ function CategoriaRow({ cat, onEditar }) {
       <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-xl flex-shrink-0">
         {cat.emoji}
       </div>
-      <span className="flex-1 font-extrabold text-zinc-100">{cat.nombre}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block font-extrabold text-zinc-100 truncate">{cat.nombre}</span>
+        {cat.es_retiro_ahorro && (
+          <span className="text-xs font-medium text-violet-400">🏦 Sale de tus ahorros</span>
+        )}
+      </span>
       <button
         onClick={() => onEditar(cat)}
         className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center

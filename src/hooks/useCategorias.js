@@ -20,20 +20,26 @@ export function useCategorias() {
 
   useEffect(() => { fetchCategorias() }, [fetchCategorias])
 
-  async function crearCategoria({ nombre, emoji, tipo }) {
+  async function crearCategoria({ nombre, emoji, tipo, es_retiro_ahorro = false }) {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase
       .from('categorias')
-      .insert({ nombre: nombre.trim(), emoji: emoji.trim(), tipo, user_id: user.id })
+      .insert({
+        nombre: nombre.trim(),
+        emoji: emoji.trim(),
+        tipo,
+        es_retiro_ahorro: tipo === 'gasto' ? es_retiro_ahorro : false,
+        user_id: user.id,
+      })
     if (error) return { error: error.message }
     await fetchCategorias()
     return { error: null }
   }
 
-  async function editarCategoria(id, { nombre, emoji }) {
+  async function editarCategoria(id, { nombre, emoji, es_retiro_ahorro }) {
     const { error } = await supabase
       .from('categorias')
-      .update({ nombre: nombre.trim(), emoji: emoji.trim() })
+      .update({ nombre: nombre.trim(), emoji: emoji.trim(), es_retiro_ahorro })
       .eq('id', id)
     if (error) return { error: error.message }
     await fetchCategorias()

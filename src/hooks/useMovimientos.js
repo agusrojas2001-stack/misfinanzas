@@ -13,7 +13,7 @@ export function useMovimientos(mes) {
     const fin = new Date(mes.split('-')[0], mes.split('-')[1], 0).toISOString().split('T')[0]
     const { data, error } = await supabase
       .from('movimientos')
-      .select('*, categorias(nombre, emoji)')
+      .select('*, categorias(nombre, emoji, es_retiro_ahorro)')
       .gte('fecha', inicio)
       .lte('fecha', fin)
       .order('fecha', { ascending: false })

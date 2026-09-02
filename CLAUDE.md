@@ -89,7 +89,7 @@ src/
 ### Tablas
 
 - **users** — Extiende `auth.users`. Campos: `id`, `nombre`, `email`, `moneda_principal`
-- **categorias** — `id`, `user_id`, `nombre`, `emoji`, `tipo` (enum: gasto/ingreso/ahorro), `activa`
+- **categorias** — `id`, `user_id`, `nombre`, `emoji`, `tipo` (enum: gasto/ingreso/ahorro), `activa`, `es_retiro_ahorro` (solo tipo=gasto: no descuenta del total de gastos del mes, resta del pool de ahorro)
 - **movimientos** — `id`, `user_id`, `tipo`, `categoria_id`, `monto`, `concepto`, `fecha`, `meta_id`
 - **presupuesto** — `id`, `user_id`, `categoria_id`, `monto_max`, `mes` (YYYY-MM-01)
 - **metas** — `id`, `user_id`, `nombre`, `emoji`, `monto_objetivo`, `fecha_objetivo`, `archivada`

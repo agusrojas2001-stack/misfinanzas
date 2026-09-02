@@ -249,7 +249,7 @@ function PieGastos({ movimientos }) {
   const [sel, setSel] = useState(null)
 
   const dataGastos = Object.values(
-    movimientos.filter(m => m.tipo === 'gasto').reduce((acc, m) => {
+    movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((acc, m) => {
       const key = m.categoria_id
       if (!acc[key]) acc[key] = { name: `${m.categorias?.emoji ?? ''} ${m.categorias?.nombre ?? 'Otros'}`, value: 0 }
       acc[key].value += montoEnPesos(m)
@@ -351,7 +351,7 @@ export default function DashboardPage() {
       const inicio = `${meses[0].key}-01`
       const finD = new Date(now.getFullYear(), now.getMonth() + 1, 0)
       const fin = finD.toISOString().split('T')[0]
-      const { data } = await supabase.from('movimientos').select('tipo,monto,fecha,moneda,cotizacion').gte('fecha',inicio).lte('fecha',fin)
+      const { data } = await supabase.from('movimientos').select('tipo,monto,fecha,moneda,cotizacion,categorias(es_retiro_ahorro)').gte('fecha',inicio).lte('fecha',fin)
       setDataMeses(meses.map(({ key, d }) => {
         const [a, m] = key.split('-').map(Number)
         const mvs = (data ?? []).filter(mv => { const [ma,mm] = mv.fecha.split('-').map(Number); return ma===a && mm===m })
@@ -359,7 +359,7 @@ export default function DashboardPage() {
         return {
           mes: label.charAt(0).toUpperCase() + label.slice(1),
           Ingresos: mvs.filter(mv=>mv.tipo==='ingreso').reduce((s,mv)=>s+montoEnPesos(mv),0),
-          Gastos:   mvs.filter(mv=>mv.tipo==='gasto').reduce((s,mv)=>s+montoEnPesos(mv),0),
+          Gastos:   mvs.filter(mv=>mv.tipo==='gasto' && !mv.categorias?.es_retiro_ahorro).reduce((s,mv)=>s+montoEnPesos(mv),0),
           Ahorro:   mvs.filter(mv=>mv.tipo==='ahorro').reduce((s,mv)=>s+montoEnPesos(mv),0),
         }
       }))
@@ -371,7 +371,7 @@ export default function DashboardPage() {
 
   // Totales
   const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0)
-  const totalGastos   = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
+  const totalGastos   = movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0)
   const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + montoEnPesos(m), 0)
   const balance       = totalIngresos - totalGastos - totalAhorro
   const pctAhorro     = totalIngresos > 0 ? Math.round((totalAhorro / totalIngresos) * 100) : 0
@@ -379,7 +379,7 @@ export default function DashboardPage() {
   // Top 3 gastos por categoría
   const topGastos = Object.values(
     movimientos
-      .filter(m => m.tipo === 'gasto')
+      .filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro)
       .reduce((acc, m) => {
         const key = m.categoria_id
         if (!acc[key]) acc[key] = { emoji: m.categorias?.emoji ?? '📦', nombre: m.categorias?.nombre ?? 'Otros', total: 0 }
@@ -463,7 +463,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" onClick={() => navigate('/movimientos')} />
-              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto').length}   color="text-rose-400"   onClick={() => navigate('/movimientos')} />
+              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).length}   color="text-rose-400"   onClick={() => navigate('/movimientos')} />
               <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" onClick={() => navigate('/metas')} />
               <PresupuestoCard gastos={totalGastos} mes={mes} onClick={() => navigate('/presupuesto')} />
             </div>

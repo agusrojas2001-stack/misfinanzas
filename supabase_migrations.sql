@@ -261,3 +261,29 @@ alter table metas
     check (moneda in ('ARS', 'USD'));
 
 -- No se toca RLS: ambas tablas ya están protegidas por user_id = auth.uid().
+
+
+-- ============================================================
+-- MIGRACIÓN: retiro de ahorro (categorías de gasto que salen del pool
+-- de ahorro en vez de contar como gasto del mes)
+-- Ejecutar en el SQL Editor de Supabase
+-- ============================================================
+
+-- categorias: marca una categoría de tipo 'gasto' como retiro de ahorro.
+-- Los movimientos con esta categoría no se descuentan del total de
+-- Gastos del mes ni del presupuesto — se restan del pool de ahorro.
+alter table categorias
+  add column if not exists es_retiro_ahorro boolean not null default false;
+
+-- No se toca RLS: categorias ya está protegida por user_id = auth.uid().
+
+
+-- ============================================================
+-- LIMPIEZA OPCIONAL: eliminar el análisis con IA (Resumen de Monedita)
+-- La app ya no genera ni lee reportes de esta tabla. Se deja como
+-- migración aparte, a criterio: si querés borrar el historial de
+-- reportes ya generados, ejecutá esto en el SQL Editor de Supabase.
+-- Si preferís conservarlos (no ocupan casi nada y no rompen nada
+-- estando ahí sin uso), no hace falta correr este bloque.
+-- ============================================================
+-- drop table if exists reportes_mensuales;

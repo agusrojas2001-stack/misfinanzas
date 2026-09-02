@@ -114,10 +114,12 @@ export async function evaluarReglas(userId) {
         .eq('archivada', false),
       supabase
         .from('categorias')
-        .select('id, nombre')
+        .select('id, nombre, es_retiro_ahorro')
         .eq('user_id', userId)
         .eq('activa', true),
     ])
+
+    const catsRetiroAhorro = new Set((categorias ?? []).filter(c => c.es_retiro_ahorro).map(c => c.id))
 
     // Función interna: crear notificación si la regla no fue disparada recientemente
     async function crearSiNueva(datos, reglaId, cooldownDias) {
@@ -178,7 +180,7 @@ export async function evaluarReglas(userId) {
     if (presupuestos && presupuestos.length > 0) {
       const gastosPorCategoria = {}
       ;(movimientos ?? []).forEach(m => {
-        if (m.tipo === 'gasto' && m.categoria_id) {
+        if (m.tipo === 'gasto' && m.categoria_id && !catsRetiroAhorro.has(m.categoria_id)) {
           gastosPorCategoria[m.categoria_id] = (gastosPorCategoria[m.categoria_id] || 0) + montoEnPesos(m)
         }
       })
@@ -337,37 +339,6 @@ export async function evaluarReglas(userId) {
             999
           )
         }
-      }
-    }
-
-    // --------------------------------------------------------
-    // REGLA 8: Reporte del mes anterior disponible (días 1-7)
-    // --------------------------------------------------------
-    if (now.getDate() <= 7) {
-      const prevMesDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      const prevMes = `${prevMesDate.getFullYear()}-${String(prevMesDate.getMonth() + 1).padStart(2, '0')}`
-      const prevMesLabel = MESES[prevMesDate.getMonth()]
-
-      const { data: reporteExistente } = await supabase
-        .from('reportes_mensuales')
-        .select('id')
-        .eq('user_id', userId)
-        .gte('mes', `${prevMes}-01`)
-        .lte('mes', `${prevMes}-01`)
-        .limit(1)
-
-      if (!reporteExistente || reporteExistente.length === 0) {
-        await crearSiNueva(
-          {
-            tipo: 'info',
-            emoji: '✨',
-            titulo: `Ya podés ver tu resumen de ${prevMesLabel}`,
-            mensaje: `El Resumen de Monedita de ${prevMesLabel} ya está disponible. Entrá a Análisis y generalo.`,
-            accion_url: '/analisis',
-          },
-          `reporte_disponible_${prevMes}`,
-          30
-        )
       }
     }
 

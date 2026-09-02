@@ -41,7 +41,7 @@ export default function MovimientosPage() {
     setLoading(true)
     const { data } = await supabase
       .from('movimientos')
-      .select('*, categorias(nombre, emoji)')
+      .select('*, categorias(nombre, emoji, es_retiro_ahorro)')
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false })
     setMovimientos(data ?? [])
@@ -82,7 +82,7 @@ export default function MovimientosPage() {
   // Totales del período filtrado
   const totalFiltrado = {
     ingresos: movsFiltrados.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0),
-    gastos:   movsFiltrados.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0),
+    gastos:   movsFiltrados.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0),
     ahorro:   movsFiltrados.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + montoEnPesos(m), 0),
   }
 

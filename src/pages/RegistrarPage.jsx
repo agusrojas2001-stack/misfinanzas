@@ -302,6 +302,12 @@ export default function RegistrarPage() {
               </div>
             </div>
           )}
+
+          {categoriaSeleccionada?.es_retiro_ahorro && (
+            <p className="text-xs text-violet-400 flex items-center gap-1.5">
+              🏦 Este gasto no se descuenta del total del mes — sale de tu pool de ahorro.
+            </p>
+          )}
         </div>
 
         {/* Panel de cuotas */}

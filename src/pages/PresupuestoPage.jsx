@@ -63,10 +63,10 @@ export default function PresupuestoPage() {
   const presupGeneral = presupuestos.find(p => p.categoria_id === null)
   const presupCats    = presupuestos.filter(p => p.categoria_id !== null)
 
-  // Gastos reales por categoría del mes
-  const totalGastadoMes = movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + montoEnPesos(m), 0)
+  // Gastos reales por categoría del mes (excluye retiros de ahorro: no son gasto nuevo)
+  const totalGastadoMes = movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0)
   const gastosPorCat    = movimientos
-    .filter(m => m.tipo === 'gasto')
+    .filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro)
     .reduce((acc, m) => { acc[m.categoria_id] = (acc[m.categoria_id] ?? 0) + montoEnPesos(m); return acc }, {})
 
   // Categorías de gasto disponibles para agregar presupuesto por categoría
