@@ -5,6 +5,7 @@ import { useMovimientos } from '../hooks/useMovimientos'
 import { usePresupuesto } from '../hooks/usePresupuesto'
 import { supabase } from '../lib/supabase'
 import { getDolarBlue, montoEnPesos } from '../lib/dolar'
+import MesSelector, { mesActual } from '../components/MesSelector'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -51,30 +52,6 @@ function formatCompact(n) {
 function balanceFontClass(n) {
   const len = formatARS(n).length
   return len > 10 ? 'text-2xl' : len > 8 ? 'text-3xl' : 'text-4xl'
-}
-
-function mesLabel(mes) {
-  const [anio, m] = mes.split('-')
-  const nombre = new Date(Number(anio), Number(m) - 1, 1)
-    .toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
-  return nombre.charAt(0).toUpperCase() + nombre.slice(1)
-}
-
-function mesAnterior(mes) {
-  const [a, m] = mes.split('-').map(Number)
-  const d = new Date(a, m - 2, 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
-
-function mesSiguiente(mes) {
-  const [a, m] = mes.split('-').map(Number)
-  const d = new Date(a, m, 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
-
-function mesActual() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 // Escala el font-size para que el monto siempre entre en una card de ~50% del viewport.
@@ -165,59 +142,6 @@ function PresupuestoCard({ gastos, mes, onClick }) {
         <div className="h-1.5 rounded-full transition-all duration-500"
              style={{ width: `${pct}%`, background: fillColor }} />
       </div>
-    </div>
-  )
-}
-
-function TusDolaresCard({ onClick }) {
-  const [cargado, setCargado]           = useState(false)
-  const [movimientosUSD, setMovUSD]     = useState([])
-  const [tieneMetaUSD, setTieneMetaUSD] = useState(false)
-  const [dolar, setDolar]               = useState(null)
-
-  useEffect(() => {
-    async function cargar() {
-      const [{ data: movs }, { data: metasUSD }, dolarHoy] = await Promise.all([
-        supabase.from('movimientos').select('tipo, monto, cotizacion').eq('moneda', 'USD'),
-        supabase.from('metas').select('id').eq('moneda', 'USD').eq('archivada', false).limit(1),
-        getDolarBlue(),
-      ])
-      setMovUSD(movs ?? [])
-      setTieneMetaUSD((metasUSD ?? []).length > 0)
-      setDolar(dolarHoy)
-      setCargado(true)
-    }
-    cargar()
-  }, [])
-
-  if (!cargado) return null
-  if (movimientosUSD.length === 0 && !tieneMetaUSD) return null
-
-  const ahorrosUSD      = movimientosUSD.filter(m => m.tipo === 'ahorro')
-  const totalUSD        = ahorrosUSD.reduce((s, m) => s + Number(m.monto), 0)
-  const valorHistorico  = ahorrosUSD.reduce((s, m) => s + Number(m.monto) * Number(m.cotizacion ?? 0), 0)
-  const valorHoy        = dolar?.venta ? totalUSD * dolar.venta : null
-  const variacion       = (valorHoy != null && valorHistorico > 0) ? valorHoy - valorHistorico : null
-  const variacionPct    = (variacion != null && valorHistorico > 0) ? (variacion / valorHistorico) * 100 : null
-  const gano            = variacion != null && variacion >= 0
-
-  return (
-    <div className="card cursor-pointer active:scale-[0.98] transition-transform" onClick={onClick} style={{ borderColor: 'rgba(167,139,250,.35)' }}>
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-xl">💵</span>
-        <span className="text-xs font-bold text-violet-400 uppercase tracking-wide">Tus dólares</span>
-      </div>
-      <p className="font-num font-extrabold text-2xl text-violet-400">
-        USD {totalUSD.toLocaleString('es-AR')}
-      </p>
-      {valorHoy != null && (
-        <p className="text-sm text-zinc-400 mt-0.5">≈ {formatARS(valorHoy)} hoy</p>
-      )}
-      {variacion != null && (
-        <p className={`text-sm font-semibold mt-2 ${gano ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {gano ? '▲' : '▼'} {formatARS(Math.abs(variacion))} ({variacionPct >= 0 ? '+' : ''}{variacionPct.toFixed(1)}%) {gano ? 'ganado' : 'perdido'} por tener dólares
-        </p>
-      )}
     </div>
   )
 }
@@ -367,8 +291,6 @@ export default function DashboardPage() {
     fetchUltimosMeses()
   }, [])
 
-  const esMesActual = mes === mesActual()
-
   // Totales
   const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0)
   const totalGastos   = movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0)
@@ -423,17 +345,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Navegador de mes */}
-      <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2.5">
-        <button onClick={() => setMes(mesAnterior(mes))}
-          className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95">
-          ‹
-        </button>
-        <span className="text-sm font-semibold text-zinc-200">{mesLabel(mes)}</span>
-        <button onClick={() => setMes(mesSiguiente(mes))} disabled={esMesActual}
-          className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
-          ›
-        </button>
-      </div>
+      <MesSelector mes={mes} onChange={setMes} />
 
       {loading ? (
         <div className="flex flex-col items-center gap-3 py-16">
@@ -462,14 +374,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" onClick={() => navigate('/movimientos')} />
-              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).length}   color="text-rose-400"   onClick={() => navigate('/movimientos')} />
-              <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" onClick={() => navigate('/metas')} />
+              <SaldoCard label="Ingresos" monto={totalIngresos} cantidad={movimientos.filter(m => m.tipo === 'ingreso').length} color="text-emerald-400" onClick={() => navigate('/movimientos?tipo=ingreso')} />
+              <SaldoCard label="Gastos"   monto={totalGastos}   cantidad={movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).length}   color="text-rose-400"   onClick={() => navigate('/movimientos?tipo=gasto')} />
+              <SaldoCard label="Ahorro"   monto={totalAhorro}   cantidad={movimientos.filter(m => m.tipo === 'ahorro').length}  color="text-violet-400" onClick={() => navigate('/movimientos?tipo=ahorro')} />
               <PresupuestoCard gastos={totalGastos} mes={mes} onClick={() => navigate('/presupuesto')} />
             </div>
           </div>
-
-          <TusDolaresCard onClick={() => navigate('/dolares')} />
 
           {/* Monedita insight card */}
           {!loading && (

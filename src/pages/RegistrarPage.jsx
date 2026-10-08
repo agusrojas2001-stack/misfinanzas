@@ -7,6 +7,7 @@ import { useMetas } from '../hooks/useMetas'
 import { useCuotas } from '../hooks/useCuotas'
 import Header from '../components/Layout/Header'
 import CuotaModal from '../components/Cuotas/CuotaModal'
+import ConceptoInput from '../components/ConceptoInput'
 import { fechaHoyLocal } from '../lib/fecha'
 import { getDolarBlue } from '../lib/dolar'
 
@@ -367,12 +368,18 @@ export default function RegistrarPage() {
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide block">
                 Descripción (opcional)
               </label>
-              <input
-                type="text"
+              <ConceptoInput
                 placeholder={tipo === 'gasto' ? '¿En qué gastaste?' : tipo === 'ingreso' ? '¿De dónde viene?' : '¿Para qué meta?'}
                 value={concepto}
-                onChange={e => setConcepto(e.target.value)}
-                className="input-dark"
+                onChange={setConcepto}
+                tipo={tipo}
+                categorias={categorias}
+                onSeleccionar={s => {
+                  // Si todavía no elegiste categoría, usamos la de la última vez
+                  if (!categoriaId && categoriasFiltradas.some(c => c.id === s.categoria_id)) {
+                    setCategoriaId(s.categoria_id)
+                  }
+                }}
               />
             </div>
 

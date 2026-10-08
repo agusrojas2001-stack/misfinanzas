@@ -6,16 +6,12 @@ import { useMetas } from '../hooks/useMetas'
 import { supabase } from '../lib/supabase'
 import { calcularInsights } from '../lib/insights'
 import { montoEnPesos } from '../lib/dolar'
+import MesSelector, { mesActual } from '../components/MesSelector'
 
 function formatARS(n) {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0
   }).format(n)
-}
-
-function mesActual() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 function mesLabel(mes) {
@@ -33,12 +29,6 @@ function mesLabelCorto(mes) {
 function mesAnterior(mes) {
   const [a, m] = mes.split('-').map(Number)
   const d = new Date(a, m - 2, 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
-
-function mesSiguiente(mes) {
-  const [a, m] = mes.split('-').map(Number)
-  const d = new Date(a, m, 1)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
@@ -107,8 +97,6 @@ export default function AnalisisPage() {
     fetchPrev()
   }, [mes])
 
-  const esMesActual = mes === mesActual()
-
   const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + montoEnPesos(m), 0)
   const totalGastos   = movimientos.filter(m => m.tipo === 'gasto' && !m.categorias?.es_retiro_ahorro).reduce((s, m) => s + montoEnPesos(m), 0)
   const totalAhorro   = movimientos.filter(m => m.tipo === 'ahorro').reduce((s, m) => s + montoEnPesos(m), 0)
@@ -176,13 +164,7 @@ export default function AnalisisPage() {
       </div>
 
       {/* Selector de mes */}
-      <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2.5">
-        <button onClick={() => setMes(mesAnterior(mes))}
-          className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95">‹</button>
-        <span className="text-sm font-semibold text-zinc-200">{mesLabel(mes)}</span>
-        <button onClick={() => setMes(mesSiguiente(mes))} disabled={esMesActual}
-          className="w-8 h-8 rounded-lg hover:bg-zinc-800 flex items-center justify-center text-zinc-400 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">›</button>
-      </div>
+      <MesSelector mes={mes} onChange={setMes} />
 
       {loading ? (
         <div className="py-16 text-center text-zinc-500 text-sm">Cargando...</div>

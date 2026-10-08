@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Modal from '../Modal'
+import ConceptoInput from '../ConceptoInput'
 import { getDolarBlue } from '../../lib/dolar'
 
 function formatARS(n) {
@@ -179,8 +180,8 @@ export default function EditarMovimientoModal({ movimiento, categorias, metas, o
         {/* Concepto */}
         <div className="space-y-1">
           <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Descripción</label>
-          <input type="text" placeholder="Opcional..." value={concepto}
-            onChange={e => setConcepto(e.target.value)} className="input-dark" />
+          <ConceptoInput placeholder="Opcional..." value={concepto}
+            onChange={setConcepto} tipo={tipo} categorias={categorias} />
         </div>
 
         {/* Meta (solo ahorro) */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useCategorias } from '../hooks/useCategorias'
 import { useMetas } from '../hooks/useMetas'
@@ -24,6 +25,13 @@ function diaLabel(fechaStr) {
 const COLORES = { gasto: 'text-rose-400', ingreso: 'text-emerald-400', ahorro: 'text-violet-400' }
 const SIGNOS  = { gasto: '−', ingreso: '+', ahorro: '+' }
 
+const FILTROS_TIPO = [
+  { id: null,      label: 'Todos',    titulo: 'Movimientos 📋', sub: 'Todos tus movimientos',           activo: 'bg-violet-600 text-white' },
+  { id: 'gasto',   label: 'Gastos',   titulo: 'Gastos 📉',      sub: 'Todos tus gastos, de siempre',    activo: 'bg-rose-500/20 text-rose-400' },
+  { id: 'ingreso', label: 'Ingresos', titulo: 'Ingresos 📈',    sub: 'Todos tus ingresos, de siempre',  activo: 'bg-emerald-500/20 text-emerald-400' },
+  { id: 'ahorro',  label: 'Ahorro',   titulo: 'Ahorro 🏦',      sub: 'Todo lo que ahorraste, de siempre', activo: 'bg-violet-500/20 text-violet-400' },
+]
+
 export default function MovimientosPage() {
   const [movimientos, setMovimientos] = useState([])
   const [loading, setLoading]         = useState(true)
@@ -36,6 +44,15 @@ export default function MovimientosPage() {
 
   const { categorias } = useCategorias()
   const { metas }      = useMetas()
+
+  // Filtro por tipo desde la URL (?tipo=gasto|ingreso|ahorro)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tipoParam  = searchParams.get('tipo')
+  const filtroTipo = FILTROS_TIPO.find(f => f.id === tipoParam) ?? FILTROS_TIPO[0]
+
+  function elegirTipo(id) {
+    setSearchParams(id ? { tipo: id } : {}, { replace: true })
+  }
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -71,13 +88,12 @@ export default function MovimientosPage() {
   }
 
   // Movimientos filtrados por rango (o todos si no hay filtro)
-  const movsFiltrados = filtroActivo
-    ? movimientos.filter(m => {
-        if (desde && m.fecha < desde) return false
-        if (hasta && m.fecha > hasta) return false
-        return true
-      })
-    : movimientos
+  const movsFiltrados = movimientos.filter(m => {
+    if (filtroTipo.id && m.tipo !== filtroTipo.id) return false
+    if (filtroActivo && desde && m.fecha < desde) return false
+    if (filtroActivo && hasta && m.fecha > hasta) return false
+    return true
+  })
 
   // Totales del período filtrado
   const totalFiltrado = {
@@ -98,8 +114,22 @@ export default function MovimientosPage() {
   return (
     <div className="page-enter px-4 md:px-6 pt-4 pb-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-zinc-100">Movimientos 📋</h1>
-        <p className="text-sm font-normal text-zinc-400 mt-0.5">Todos tus movimientos</p>
+        <h1 className="text-3xl font-black text-zinc-100">{filtroTipo.titulo}</h1>
+        <p className="text-sm font-normal text-zinc-400 mt-0.5">{filtroTipo.sub}</p>
+      </div>
+
+      {/* Filtro por tipo */}
+      <div className="flex gap-1 p-1 rounded-2xl bg-zinc-900 border border-zinc-800">
+        {FILTROS_TIPO.map(f => (
+          <button
+            key={f.label}
+            onClick={() => elegirTipo(f.id)}
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all
+              ${filtroTipo.id === f.id ? f.activo : 'text-zinc-500 hover:text-zinc-300'}`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Filtro por rango de fechas */}
